@@ -9,5 +9,17 @@ public class ElveMobileActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        
+        // test communications
+        try
+		{
+			//CommunicationTest.test();
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }

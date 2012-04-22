@@ -11,8 +11,9 @@ import com.google.common.eventbus.Subscribe;
 
 public class CommunicationTest
 {
-    public void test(String[] args) throws Exception
+    public static void test() throws Exception
     {
+    	
 		// Get the unique id of this android device.  http://android-developers.blogspot.com/2011/03/identifying-app-installations.html
         //String deviceID = Secure.getString(getContext().getContentResolver(), Secure.ANDROID_ID);
         String deviceID = "android-device-id";
@@ -34,7 +35,7 @@ public class CommunicationTest
         //comm.SendLocationChangeEvent(latitude, longitude, altitude, course, speedMetersPerSecond);
         
         // When done with the communications, close the object.
-        comm.close();
+        //comm.close();
     }
 }
 

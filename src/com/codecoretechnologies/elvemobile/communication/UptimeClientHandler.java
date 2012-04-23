@@ -30,6 +30,7 @@ import org.jboss.netty.util.TimerTask;
 
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.util.Log;
 
 import com.google.common.eventbus.EventBus;
 
@@ -97,7 +98,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 	        println("Sleeping for: " + UptimeClient.RECONNECT_DELAY + "s");
 	        _timer.newTimeout(new TimerTask()
 	        {
-	            public void run(Timeout timeout)
+	            public void run(Timeout timeout) //throws Exception
 	            {
 	                println("Reconnecting to: " + getRemoteAddress());
 	                _bootstrap.connect();
@@ -175,9 +176,11 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
     void println(String msg) {
         if (_startTime < 0) {
-            System.err.format("[SERVER IS DOWN] %s%n", msg);
+        	Log.d("", "[SERVER IS DOWN] " + msg);
+            //System.err.format("[SERVER IS DOWN] %s%n", msg);
         } else {
-            System.err.format("[UPTIME: %5ds] %s%n", (System.currentTimeMillis() - _startTime) / 1000, msg);
+        	Log.d("", String.format("[UPTIME: %5ds] %s%n", (System.currentTimeMillis() - _startTime) / 1000, msg));
+            //System.err.format("[UPTIME: %5ds] %s%n", (System.currentTimeMillis() - _startTime) / 1000, msg);
         }
     }
     

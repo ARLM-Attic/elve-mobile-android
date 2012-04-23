@@ -1,6 +1,9 @@
 package com.codecoretechnologies.elvemobile;
 
+import android.content.Context;
 import android.graphics.Point;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.provider.Settings.Secure;
 
 import com.codecoretechnologies.elvemobile.communication.*;
@@ -28,6 +31,10 @@ public class CommunicationTest
         // Start trying to connect to server and handle protocol.
         comm.run();
         
+        
+        // Wait for handleTouchTcpClientStateChangedEventArgs to indicate authenticated...
+        
+        
         // Send a touch event
         //comm.SendTouchEvent(eventType, x, y);
         
@@ -36,6 +43,19 @@ public class CommunicationTest
         
         // When done with the communications, close the object.
         //comm.close();
+    }
+    
+    public static  boolean isNetworkAvailable(Context context)
+    {
+        ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        // if no network is available networkInfo will be null
+        // otherwise check if we are connected
+        if (networkInfo != null && networkInfo.isConnected())
+        {
+            return true;
+        }
+        return false;
     }
 }
 

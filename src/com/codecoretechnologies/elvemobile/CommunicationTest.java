@@ -153,6 +153,11 @@ public class CommunicationTest
     	{
     		_hasReceivedFirstImage = true;
     		// TODO: Switch to the touch screen interface activity after setting the image.
+    		// TODO: Compare the elve touchscreen interface size with the screen size:
+    		//       If the interface is wide, not tall, then rotate the imageview +/-90 degrees. 
+    		//       If they match then do not allow scrolling or zoom.
+    		//       If they do not match then support scrolling and zoom and use an initial zoom so the entire touch screen is visible and spans to edge of screen.
+    		//       Does android return points or pixels, ie is the reported screen size the actual pixel size or a scaled size?
     	}
     	
     	// FUTURE TODO: eventArgs.SizeMode will always be Normal in Snapshot mode, but if granular command mode support is added then we need to support it!

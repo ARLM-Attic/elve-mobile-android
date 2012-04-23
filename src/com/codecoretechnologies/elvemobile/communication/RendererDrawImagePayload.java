@@ -9,8 +9,8 @@ import android.graphics.Rect;
 public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
 {
     public Rect Bounds;
-    public float Opacity; // send 0-255 (but our variable really holds 0.0-1.0).
-    public byte SizeMode;
+    public int Opacity; // 0-255
+    public ImageSizeMode SizeMode;
     public Bitmap Image;
 
     public RendererDrawImagePayload(byte[] data) throws IOException
@@ -21,8 +21,8 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
         	sr = new BinaryStreamReader(data);
         	
             Bounds = sr.ReadRectangle();
-            Opacity = (float)(sr.ReadByte() / 255.0);
-            SizeMode = sr.ReadByte();
+            Opacity = sr.ReadUnsignedByte();
+            SizeMode = ImageSizeMode.getFromValue(sr.ReadByte());
             Image = sr.ReadImage();
     	}
     	finally
@@ -32,7 +32,7 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
     	}
     }
 
-    public RendererDrawImagePayload(Rect bounds, float opacity, byte sizeMode, Bitmap img)
+    public RendererDrawImagePayload(Rect bounds, int opacity, ImageSizeMode sizeMode, Bitmap img)
     {
         Bounds = bounds;
         Opacity = opacity;

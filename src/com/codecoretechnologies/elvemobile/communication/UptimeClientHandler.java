@@ -598,7 +598,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 			e.printStackTrace();
 		}
     }
-	
+
 	public void close() throws IOException
 	{
 		// YOU MUST CALL THIS BEFORE CALLING releaseExternalResources() on the factory or bootstrap!!!

@@ -1,8 +1,5 @@
 package com.codecoretechnologies.elvemobile;
 
-import java.io.InputStreamReader;
-import java.net.Socket;
-
 import android.app.Activity;
 import android.os.Bundle;
 
@@ -22,7 +19,7 @@ public class ElveMobileActivity extends Activity {
 //        	int b = in.read(); //-1 if nothing
         	
         	boolean result = CommunicationTest.isNetworkAvailable(this);
-			CommunicationTest.test();
+			CommunicationTest.test(this);
 		}
 		catch (Exception e)
 		{

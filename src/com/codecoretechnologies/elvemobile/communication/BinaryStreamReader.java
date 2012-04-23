@@ -148,6 +148,11 @@ public class BinaryStreamReader implements Closeable
         }
     }
 
+	public int ReadUnsignedByte() throws IOException
+	{
+		return _is.readUnsignedByte();
+	}
+	
 	public void close() throws IOException
 	{
 		if(_is != null)

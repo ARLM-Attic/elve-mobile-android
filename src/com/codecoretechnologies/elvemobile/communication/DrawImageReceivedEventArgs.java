@@ -7,11 +7,11 @@ import android.graphics.Rect;
 public class DrawImageReceivedEventArgs
 {
     public Rect Bounds;
-    public float Opacity; // send 0-255 (but our variable really holds 0.0-1.0).
-    public byte SizeMode;
+    public int Opacity; // 0-255
+    public ImageSizeMode SizeMode;
     public Bitmap Image;
 
-    public DrawImageReceivedEventArgs(Rect bounds, float opacity, byte sizeMode, Bitmap img)
+    public DrawImageReceivedEventArgs(Rect bounds, int opacity, ImageSizeMode sizeMode, Bitmap img)
     {
         Bounds = bounds;
         Opacity = opacity;

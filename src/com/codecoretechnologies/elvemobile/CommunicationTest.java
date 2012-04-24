@@ -172,9 +172,10 @@ public class CommunicationTest
     		canvas.scale(sx, sy);
     		paint.setFilterBitmap(true); // use filter to smooth any resizing.
     	}
-    	if (eventArgs.Opacity != 1)
+    	if (eventArgs.Opacity != 255)
     		paint.setAlpha(eventArgs.Opacity); //0-255
-    	canvas.translate(eventArgs.Bounds.left, eventArgs.Bounds.top);
+    	if (eventArgs.Bounds.left != 0 || eventArgs.Bounds.top != 0)
+    		canvas.translate(eventArgs.Bounds.left, eventArgs.Bounds.top);
     	canvas.drawBitmap(eventArgs.Image, new Matrix(), paint);
     	//canvas.drawBitmap(eventArgs.Image, null, eventArgs.Bounds, paint); // This is simpler than above but I don't know how it works internally and if there is a performance hit if we aren't actually scaling (which will will likely never be doing).
 

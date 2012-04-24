@@ -87,6 +87,18 @@ public class UptimeClient implements Closeable
         });
 
         _bootstrap.setOption("remoteAddress", new InetSocketAddress(_host, _port));
+        //_bootstrap.setOption("child.keepAlive", true);
+        //_bootstrap.setOption("child.tcpNoDelay", true);
+        //_bootstrap.setOption("child.connectTimeoutMillis", 15000);
+        
+        // On Android 2.2 you must disable IP6 in the Android Emulator otherwise you will see "java.net.SocketException: Bad address family" in the LogCat window and NullPointerException.
+        // See http://meteatamel.wordpress.com/2010/08/26/socketexceptions-with-android/
+        // and http://code.google.com/p/android/issues/detail?id=9431
+        //if ("google_sdk".equals(android.os.Build.PRODUCT) || "sdk".equals(android.os.Build.PRODUCT))
+        if ("9774D56D682E549C".equals(_deviceID)); // Since Android 2.2 the emulator device id is "9774D56D682E549C".
+        	java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
+        
+        
 
         _eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.AttemptingToConnect));
         

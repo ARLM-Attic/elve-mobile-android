@@ -1,11 +1,14 @@
 package com.codecoretechnologies.elvemobile;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -28,15 +31,14 @@ import com.google.common.eventbus.Subscribe;
 public class CommunicationTest
 {
     public static void test(Context context) throws Exception
-    {
-    	
+    {	
 		// Get the unique id of this android device.  http://android-developers.blogspot.com/2011/03/identifying-app-installations.html
         String deviceID = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
 
         // Get the device screen size.
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
-        Point screenSize = new Point(display.getWidth(), display.getHeight());
+        Point screenSize = new Point(display.getWidth(), display.getHeight()); // Gets the size of the display, in pixels.
 
         // TODO: session ID should be stored in memory somewhere between backgound/foreground switches to continue the prior session.
         byte[] sessionID = null;
@@ -53,6 +55,8 @@ public class CommunicationTest
 
         ElveMobileActivity.badStaticImageViewForTesting.setOnTouchListener(new OnTouchListener()
 		{
+        	private boolean _startedTouchTransaction = false; // used to prevent sending move events when a TouchDown event has not yet been sent. 
+        	
         	private static final long DOUBLE_TOUCH_INTERVAL = 250; // in millis
         	private long _lastTouchUpTime;
         	
@@ -61,7 +65,6 @@ public class CommunicationTest
         	
 			public boolean onTouch(View v, MotionEvent event)
 			{
-
 				// Scale and offset (X,Y) based on imageview zoom and centering.
 				// calculate inverse matrix
 				Matrix inverse = new Matrix();
@@ -73,16 +76,42 @@ public class CommunicationTest
 				int imageX = (int)touchPoint[0];
 				int imageY = (int)touchPoint[1];
 
+				// Get the size of the displayed image. We call getBounds() but it really returns the size since left and top are always 0. 
+				Rect imageSize = ((ImageView)v).getDrawable().getBounds();
+				
 				// Get current time in milliseconds.
 				long actionTime = System.currentTimeMillis();
+
+				// Get the event type.
+				int motionEvent = event.getAction();
 				
+				// If the touch point is outside the image bounds then just return.
+				if ((imageX < imageSize.left || imageX > imageSize.right || imageY < imageSize.top || imageY > imageSize.bottom)
+					|| (motionEvent == MotionEvent.ACTION_CANCEL))
+				{
+					// Commented out since I believe the server can handle not receiving an up event.
+					//if (_touchStartedWithInBounds && motionEvent == MotionEvent.ACTION_UP || motionEvent == MotionEvent.ACTION_CANCEL)
+					//{
+					//	// the protocol does not support a cancel, so since we have already sent a down event we must complete it with an up event.
+					//	// end the touch transaction.
+					//	// I guess we don't send the touched/double touched event?
+					//	comm.SendTouchEvent(TouchEventType.TouchUp, imageX, imageY);
+					//	
+					//	_lastTouchUpTime = actionTime;
+					//	_touchStartedWithInBounds = false;
+					//}
+					return true;
+				}
+				
+								
 				switch (event.getAction())
 				{
 					case MotionEvent.ACTION_DOWN:
+						_startedTouchTransaction = true;
 						comm.SendTouchEvent(TouchEventType.TouchDown, imageX, imageY);
 						break;
 
-					case MotionEvent.ACTION_UP:
+					case MotionEvent.ACTION_UP: 
 						if (actionTime - _lastTouchUpTime <= DOUBLE_TOUCH_INTERVAL)
 						{
 							Log.d("", "DoubleTouch: " + imageX + "," + imageY);
@@ -97,18 +126,22 @@ public class CommunicationTest
 						comm.SendTouchEvent(TouchEventType.TouchUp, imageX, imageY);
 						
 						_lastTouchUpTime = actionTime;
+						_startedTouchTransaction = false;
 						break;
 
 					case MotionEvent.ACTION_MOVE:
-						// Throttle the sent mouse moved commands so we don't overload the server.
-						if (actionTime - _lastSendTouchMoveTime > MOVE_SEND_INTERVAL)
+						if (_startedTouchTransaction) // don't send move commands if no original touch down was sent (happens when touching down outside the image bounds).
 						{
-							Log.d("", "TouchMove: " + imageX + "," + imageY);
-							comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
-							_lastSendTouchMoveTime = actionTime;
+							// Throttle the sent mouse moved commands so we don't overload the server.
+							if (actionTime - _lastSendTouchMoveTime > MOVE_SEND_INTERVAL)
+							{
+								Log.d("", "TouchMove: " + imageX + "," + imageY);
+								comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
+								_lastSendTouchMoveTime = actionTime;
+							}
+							else
+								Log.d("", "SKIP_Move: " + imageX + "," + imageY);
 						}
-						else
-							Log.d("", "SKIP_Move: " + imageX + "," + imageY);
 						
 						break;
 				}
@@ -213,7 +246,7 @@ public class CommunicationTest
     		_touchScreenImage = Bitmap.createBitmap(eventArgs.TouchScreenSize.x, eventArgs.TouchScreenSize.y, Bitmap.Config.ARGB_8888);
     	}
     }
-    
+
     @Subscribe
     public void handleDrawImageReceivedEventArgs(DrawImageReceivedEventArgs eventArgs)
     {
@@ -223,14 +256,46 @@ public class CommunicationTest
     	if (_hasReceivedFirstImage == false)
     	{
     		_hasReceivedFirstImage = true;
-    		// TODO: Switch to the touch screen interface activity after setting the image.
-    		// TODO: Compare the elve touchscreen interface size with the screen size:
-    		//       If the interface is wide, not tall, then rotate the imageview +/-90 degrees. 
-    		//       If they match then do not allow scrolling or zoom.
-    		//       If they do not match then support scrolling and zoom and use an initial zoom so the entire touch screen is visible and spans to edge of screen.
-    		//       Does android return points or pixels, ie is the reported screen size the actual pixel size or a scaled size?
+    		// TODO: Show the touch screen interface activity after setting the image.
+    		
+    		// Get the imageview's activity.
+    		Activity activity = (Activity)(ElveMobileActivity.badStaticImageViewForTesting.getContext());
+    		// Get screen size.
+            WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
+            Display display = wm.getDefaultDisplay();
+            Point screenSize = new Point(display.getWidth(), display.getHeight()); // Gets the size of the display, in pixels.
+
+            
+    		// If the touch screen size is the same size as the screen then do not use a ScrollViewWithTouch since it uses a touch delay that is annoying.
+			if (_touchScreenImage.getWidth() == screenSize.x && _touchScreenImage.getHeight() == screenSize.y)
+			{
+				// The touch screen is the same size as the portrait screen.
+				// TODO: turn OFF rotate and zoom support.
+				activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // this is likely uneeded but lets be explicit.
+			}
+			else if (_touchScreenImage.getWidth() == screenSize.x && _touchScreenImage.getHeight() == screenSize.y) 
+			{
+				// The touch screen is the same size as the lanscape screen.
+				// TODO: turn OFF rotate and zoom support.
+				// Show the view in landscape mode.
+				activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+			}
+			else
+			{
+				// TODO: turn ON rotate and zoom support.
+				if (_touchScreenImage.getWidth() > _touchScreenImage.getHeight())
+				{
+					// Show the view in landscape mode.
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				}
+				else
+				{
+					// Show the view in portrait mode.
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // this is likely uneeded but lets be explicit.
+				}
+			}
     	}
-    	
+
     	// FUTURE TODO: eventArgs.SizeMode will always be Normal in Snapshot mode, but if granular command mode support is added then we need to support it!
     	
     	// Draw the snapshot.
@@ -250,9 +315,8 @@ public class CommunicationTest
     	canvas.drawBitmap(eventArgs.Image, new Matrix(), paint);
     	//canvas.drawBitmap(eventArgs.Image, null, eventArgs.Bounds, paint); // This is simpler than above but I don't know how it works internally and if there is a performance hit if we aren't actually scaling (which will will likely never be doing).
 
-    	// TODO: Update the Image View widget with the new image (is there a refresh() or do we reset it?).
     	// NOTE: There are a variety of ways to update the UI on the UI thread: http://developer.android.com/resources/articles/painless-threading.html
-    	
+    	// TODO: get imageview from good place
     	final ImageView _imageView = ElveMobileActivity.badStaticImageViewForTesting;
 		_imageView.post(new Runnable()
 		{
@@ -263,7 +327,7 @@ public class CommunicationTest
 		    		// NOTE: The android Bitmap docs indicates that you do not need to call bitmap.recycle() on the old imageview bitmap.
 		    		// The bitmap.recycle() method ... "need not be called, since the normal GC process will free up this memory when there are no more references to this bitmap."
 		    		// doesn't work -> HOWEVER I call it anyway since the images can be replaced rapidly and I don't know how fast the android garbage collector will free the bitmap memory.
-		    		
+		    		 
 		    		//Drawable drawable = _imageView.getDrawable();
 		    		
 		    		// Set new bitmap in imageview.

@@ -13,13 +13,12 @@ public class ElveMobileActivity extends Activity {
         setContentView(R.layout.main);
         
         
-        
         badStaticImageViewForTesting = (ImageView) findViewById(R.id.ivElveTouchScreenInterface);
         
         // test communications
         try
 		{
-        	boolean result = CommunicationTest.isNetworkAvailable(this);
+        	boolean result = CommunicationTest.isNetworkAvailable(this); // I don't know that this really ever needs to be called since the communication object will keep trying to reconnect. need to test.
 			CommunicationTest.test(this);
 		}
 		catch (Exception e)

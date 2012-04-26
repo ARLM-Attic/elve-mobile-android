@@ -165,7 +165,18 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
         if (cause instanceof ReadTimeoutException)
         {
             // The connection was OK but there was no traffic for last period.
-            println("Disconnecting due to no inbound traffic");
+            //println("Disconnecting due to no inbound traffic");
+        	println("Sending ping since no inbound traffic in a while.");
+            try
+			{
+				sendMessage(TouchServiceTcpCommunicationPayloadTypes.Ping, null, ctx.getChannel());
+				return; // don't close the channel.
+			}
+			catch (IOException e1)
+			{
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
         }
         else
         {

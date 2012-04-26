@@ -52,11 +52,17 @@ public class CommunicationTest
 
 
         ElveMobileActivity.badStaticImageViewForTesting.setOnTouchListener(new OnTouchListener()
-		{	
+		{
+        	private static final long DOUBLE_TOUCH_INTERVAL = 250; // in millis
+        	private long _lastTouchUpTime;
+        	
+        	private static final long MOVE_SEND_INTERVAL = 125; // in millis
+        	private long _lastSendTouchMoveTime;
+        	
 			public boolean onTouch(View v, MotionEvent event)
 			{
-				// TODO: Do we also need to adjust for zoom offset (when image is not at the edge of screen)?
-				// Scale (X,Y) based on imageview zoom.
+
+				// Scale and offset (X,Y) based on imageview zoom and centering.
 				// calculate inverse matrix
 				Matrix inverse = new Matrix();
 				((ImageView)v).getImageMatrix().invert(inverse);
@@ -67,22 +73,43 @@ public class CommunicationTest
 				int imageX = (int)touchPoint[0];
 				int imageY = (int)touchPoint[1];
 
+				// Get current time in milliseconds.
+				long actionTime = System.currentTimeMillis();
+				
 				switch (event.getAction())
 				{
 					case MotionEvent.ACTION_DOWN:
 						comm.SendTouchEvent(TouchEventType.TouchDown, imageX, imageY);
 						break;
+
 					case MotionEvent.ACTION_UP:
-						// TODO: determine if this is a double touch
-						if (true)
-							comm.SendTouchEvent(TouchEventType.Touched, imageX, imageY);
-						else
+						if (actionTime - _lastTouchUpTime <= DOUBLE_TOUCH_INTERVAL)
+						{
+							Log.d("", "DoubleTouch: " + imageX + "," + imageY);
 							comm.SendTouchEvent(TouchEventType.DoubleTouch, imageX, imageY);
+						}
+						else
+						{
+							Log.d("", "Touched: " + imageX + "," + imageY);
+							comm.SendTouchEvent(TouchEventType.Touched, imageX, imageY);
+						}
+						
 						comm.SendTouchEvent(TouchEventType.TouchUp, imageX, imageY);
+						
+						_lastTouchUpTime = actionTime;
 						break;
-					case MotionEvent.ACTION_MOVE: // TODO: this should be handled on a timer so we don't flood the tcp connect
-						Log.d("", "TouchMove: " + imageX + "," + imageY);
-						comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
+
+					case MotionEvent.ACTION_MOVE:
+						// Throttle the sent mouse moved commands so we don't overload the server.
+						if (actionTime - _lastSendTouchMoveTime > MOVE_SEND_INTERVAL)
+						{
+							Log.d("", "TouchMove: " + imageX + "," + imageY);
+							comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
+							_lastSendTouchMoveTime = actionTime;
+						}
+						else
+							Log.d("", "SKIP_Move: " + imageX + "," + imageY);
+						
 						break;
 				}
 

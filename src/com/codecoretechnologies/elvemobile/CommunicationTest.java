@@ -31,7 +31,7 @@ import com.google.common.eventbus.Subscribe;
 public class CommunicationTest
 {
     public static void test(Context context) throws Exception
-    {	
+    {
 		// Get the unique id of this android device.  http://android-developers.blogspot.com/2011/03/identifying-app-installations.html
         String deviceID = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
 
@@ -53,7 +53,7 @@ public class CommunicationTest
         comm.run();
 
 
-        ElveMobileActivity.badStaticImageViewForTesting.setOnTouchListener(new OnTouchListener()
+        ElveTouchScreenActivity.badStaticImageViewForTesting.setOnTouchListener(new OnTouchListener()
 		{
         	private boolean _startedTouchTransaction = false; // used to prevent sending move events when a TouchDown event has not yet been sent. 
         	
@@ -259,7 +259,7 @@ public class CommunicationTest
     		// TODO: Show the touch screen interface activity after setting the image.
     		
     		// Get the imageview's activity.
-    		Activity activity = (Activity)(ElveMobileActivity.badStaticImageViewForTesting.getContext());
+    		Activity activity = (Activity)(ElveTouchScreenActivity.badStaticImageViewForTesting.getContext());
     		// Get screen size.
             WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
             Display display = wm.getDefaultDisplay();
@@ -317,7 +317,7 @@ public class CommunicationTest
 
     	// NOTE: There are a variety of ways to update the UI on the UI thread: http://developer.android.com/resources/articles/painless-threading.html
     	// TODO: get imageview from good place
-    	final ImageView _imageView = ElveMobileActivity.badStaticImageViewForTesting;
+    	final ImageView _imageView = ElveTouchScreenActivity.badStaticImageViewForTesting;
 		_imageView.post(new Runnable()
 		{
 		    public void run()

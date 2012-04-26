@@ -6,12 +6,18 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import android.view.Display;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
+import android.view.View.OnTouchListener;
+import android.widget.ImageView;
 
 import com.codecoretechnologies.elvemobile.communication.*;
 import com.google.common.eventbus.EventBus;
@@ -38,18 +44,56 @@ public class CommunicationTest
         // Create the event bus. 
         EventBus eventBus = new EventBus();
         // Create the communications object.
-        UptimeClient comm = new UptimeClient("192.168.1.3", 33907, "admin", "admin", sessionID, deviceID, screenSize, eventBus);
+        final UptimeClient comm = new UptimeClient("192.168.1.3", 33907, "admin", "admin", sessionID, deviceID, screenSize, eventBus);
         // Register the communications object with the event bus (the communications object will trigger events).
         eventBus.register(new temporaryEventHolder());        
         // Start trying to connect to server and handle protocol.
         comm.run();
+
+
+        ElveMobileActivity.badStaticImageViewForTesting.setOnTouchListener(new OnTouchListener()
+		{	
+			public boolean onTouch(View v, MotionEvent event)
+			{
+				// TODO: Do we also need to adjust for zoom offset (when image is not at the edge of screen)?
+				// Scale (X,Y) based on imageview zoom.
+				// calculate inverse matrix
+				Matrix inverse = new Matrix();
+				((ImageView)v).getImageMatrix().invert(inverse);
+				// map touch point from ImageView to image
+				float[] touchPoint = new float[] {event.getX(), event.getY()};
+				inverse.mapPoints(touchPoint);
+				// touchPoint now contains x and y in image's coordinate system
+				int imageX = (int)touchPoint[0];
+				int imageY = (int)touchPoint[1];
+
+				switch (event.getAction())
+				{
+					case MotionEvent.ACTION_DOWN:
+						comm.SendTouchEvent(TouchEventType.TouchDown, imageX, imageY);
+						break;
+					case MotionEvent.ACTION_UP:
+						// TODO: determine if this is a double touch
+						if (true)
+							comm.SendTouchEvent(TouchEventType.Touched, imageX, imageY);
+						else
+							comm.SendTouchEvent(TouchEventType.DoubleTouch, imageX, imageY);
+						comm.SendTouchEvent(TouchEventType.TouchUp, imageX, imageY);
+						break;
+					case MotionEvent.ACTION_MOVE: // TODO: this should be handled on a timer so we don't flood the tcp connect
+						Log.d("", "TouchMove: " + imageX + "," + imageY);
+						comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
+						break;
+				}
+
+				return true;
+			}
+		});
+
         
         
         // Wait for handleTouchTcpClientStateChangedEventArgs to indicate authenticated...
         
-        
-        // Send a touch event
-        //comm.SendTouchEvent(eventType, x, y);
         
         // Send location change event
         //comm.SendLocationChangeEvent(latitude, longitude, altitude, course, speedMetersPerSecond);
@@ -181,12 +225,38 @@ public class CommunicationTest
 
     	// TODO: Update the Image View widget with the new image (is there a refresh() or do we reset it?).
     	// NOTE: There are a variety of ways to update the UI on the UI thread: http://developer.android.com/resources/articles/painless-threading.html
-//		_imageView.post(new Runnable() {
-//		    public void run() {
-//		    	_imageView.setImageBitmap(_touchScreenImage);
-//		    	_imageView.invalidate();
-//		    }
-//		});
+    	
+    	final ImageView _imageView = ElveMobileActivity.badStaticImageViewForTesting;
+		_imageView.post(new Runnable()
+		{
+		    public void run()
+		    {
+		    	try
+		    	{
+		    		// NOTE: The android Bitmap docs indicates that you do not need to call bitmap.recycle() on the old imageview bitmap.
+		    		// The bitmap.recycle() method ... "need not be called, since the normal GC process will free up this memory when there are no more references to this bitmap."
+		    		// doesn't work -> HOWEVER I call it anyway since the images can be replaced rapidly and I don't know how fast the android garbage collector will free the bitmap memory.
+		    		
+		    		//Drawable drawable = _imageView.getDrawable();
+		    		
+		    		// Set new bitmap in imageview.
+			    	_imageView.setImageBitmap(_touchScreenImage);
+			    	_imageView.invalidate();
+			    	
+			    	// This causes an EXCEPTION when the 2nd image is added so I commented it out. 
+//			    	// Dispose of the old bitmap.
+//			    	if (drawable instanceof BitmapDrawable) {
+//			    	    BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+//			    	    Bitmap bitmap = bitmapDrawable.getBitmap();
+//			    	    bitmap.recycle();
+//			    	}
+			    }
+		    	catch (Exception ex)
+		    	{
+		    		;
+		    	}
+		    }
+		});
 
     }
 }

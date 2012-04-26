@@ -496,7 +496,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 								}
 							}, 125, TimeUnit.MILLISECONDS);
 						}
-					}					
+					}
                 	break;
                     
                     

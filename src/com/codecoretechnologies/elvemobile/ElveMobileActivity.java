@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.ImageView;
+
 
 public class ElveMobileActivity extends Activity {
     /** Called when the activity is first created. */
@@ -11,13 +13,12 @@ public class ElveMobileActivity extends Activity {
         setContentView(R.layout.main);
         
         
+        
+        badStaticImageViewForTesting = (ImageView) findViewById(R.id.ivElveTouchScreenInterface);
+        
         // test communications
         try
 		{
-//        	Socket sock = new Socket("192.168.1.3", 33907);
-//        	InputStreamReader in = new InputStreamReader(sock.getInputStream());
-//        	int b = in.read(); //-1 if nothing
-        	
         	boolean result = CommunicationTest.isNetworkAvailable(this);
 			CommunicationTest.test(this);
 		}
@@ -27,4 +28,9 @@ public class ElveMobileActivity extends Activity {
 			e.printStackTrace();
 		}
     }
+    
+    // TODO: THIS IS ONLY FOR TESTING!!! I assume the imageview will be disposed when the associated activity is removed.
+    public static ImageView badStaticImageViewForTesting;
+    
+    
 }

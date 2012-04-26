@@ -24,11 +24,12 @@ public class BinaryStreamReader implements Closeable
 
     public Rect ReadRectangle() throws IOException
     {
-        return new Rect(
-            (int)_is.readShort(), // 2 bytes
-            (int)_is.readShort(), // 2 bytes
-            (int)_is.readShort(), // 2 bytes
-            (int)_is.readShort()); // 2 bytes
+    	int x = _is.readShort(); // 2 bytes
+        int y = _is.readShort(); // 2 bytes
+        int width = _is.readShort(); // 2 bytes
+        int height = _is.readShort(); // 2 bytes
+        
+        return new Rect(x, y, x + width, y + height);
     }
 
     public Point ReadPoint() throws IOException

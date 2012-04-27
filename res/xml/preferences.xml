@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Preferences">
+
+  <PreferenceCategory
+     android:title="Elve Touch Server">
+    
+    <EditTextPreference
+        android:key="pref_serverAddress"
+        android:title="Server"
+        android:summary="Hostname or IP Address"
+        android:dialogTitle="Hostname or IP Address"
+    />
+    
+        <EditTextPreference
+        android:key="pref_port"
+        android:title="Port"
+        android:summary="(Advanced) The port to connect to"
+        android:dialogTitle="This is usually 33907."
+        android:defaultValue="33907"
+    />
+     
+  </PreferenceCategory>
+
+  <PreferenceCategory
+     android:title="User Credentials">
+    
+    <EditTextPreference
+        android:key="pref_username"
+        android:title="Username"
+        android:summary="Your Elve account username"
+        android:dialogTitle="Enter your Elve username"
+    />
+    
+    <EditTextPreference
+        android:key="pref_password"
+        android:title="Password"
+        android:summary="Your Elve account password"
+        android:dialogTitle="Enter your password"
+    />
+     
+  </PreferenceCategory>
+   
+</PreferenceScreen>

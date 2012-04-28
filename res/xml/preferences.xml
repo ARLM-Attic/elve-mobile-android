@@ -18,6 +18,8 @@
         android:summary="(Advanced) The port to connect to"
         android:dialogTitle="This is usually 33907."
         android:defaultValue="33907"
+        android:inputType="number"
+        android:maxLength="5"
     />
      
   </PreferenceCategory>
@@ -37,8 +39,19 @@
         android:title="Password"
         android:summary="Your Elve account password"
         android:dialogTitle="Enter your password"
+        android:inputType="textPassword"
     />
      
   </PreferenceCategory>
+  
+  <Preference
+    android:title="Help"
+    android:summary="View online manual">
+
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:data="http://www.codecoretechnologies.com/content/Elve-Mobile-Android.ashx" />
+
+  </Preference>
    
 </PreferenceScreen>

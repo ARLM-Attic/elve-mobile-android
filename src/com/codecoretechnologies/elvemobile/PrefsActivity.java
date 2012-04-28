@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 
@@ -52,41 +53,20 @@ public class PrefsActivity extends PreferenceActivity {
         
     void connect()
     {
-    	// TODO: show popup dialog activity with status
-    	// TODO: add connection logic here or whereever makes sense
     	try
     	{
-	    	
-	    	
-//	    	ProgressDialog progressDialog = (ProgressDialog) new ProgressDialog.Builder(PrefsActivity.this).create();  
-//	    	progressDialog.setTitle("Preferences");  
-//	    	progressDialog.setMessage("Connecting.");  
-//	    	progressDialog.setButton("OK", new DialogInterface.OnClickListener() {  
-//		      public void onClick(DialogInterface dialog, int which) {  
-//		        return;  
-//		    } });
-//	    	progressDialog.setIcon(R.drawable.icon);
-//	    	progressDialog.show();
-    		
-    		ProgressDialog dialog = ProgressDialog.show(PrefsActivity.this, "", "Connecting...", true);
-    		dialog.show();
-	    	
-	    	
-	    	
-	    	// TODO: don't show the touch screen until we have connected. I just have it here for testing
-	        //Intent myIntent = new Intent(PrefsActivity.this, ElveTouchScreenActivity.class);
-	        //startActivity(myIntent);
+    		CommunicationController.Start(this);
     	}
     	catch (Exception ex)
     	{
     		int i =1;
     	}
     }
-    
+
     boolean isComplete()
     {
     	if (getServerAddress(this) != ""
-    			&& getPort(this) != 0
+    			&& getServerPort(this) != 0
     			&& getUsername(this) != "")
     		return true;
     	
@@ -98,7 +78,7 @@ public class PrefsActivity extends PreferenceActivity {
         return prefs.getString("pref_serverAddress", "");
     }
     
-    static public int getPort(Context context) {
+    static public int getServerPort(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         try
         {
@@ -120,6 +100,45 @@ public class PrefsActivity extends PreferenceActivity {
     static public String getPassword(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getString("pref_password", "");
+    }
+    
+    static public byte[] getHiddenSessionID(Context context) {
+    	try
+    	{
+	        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	        String strSessionID = prefs.getString("pref_hidden_sessionid", "");
+	        
+	        if (strSessionID == "")
+	        	return null;
+	        else
+	        	return Base64.decode(strSessionID, Base64.DEFAULT);
+    	}
+    	catch (Exception ex)
+    	{
+    		// no big deal, just start a new session.
+    		return null;
+    	}
+    }
+    
+    static public void setHiddenSessionID(Context context, byte[] sessionID) {
+    	try
+    	{
+	        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	        SharedPreferences.Editor editor = prefs.edit();
+	        
+	        String strSessionID;
+	        if (sessionID == null || sessionID.length == 0)
+	        	strSessionID = "";
+	        else
+	        	strSessionID = Base64.encodeToString(sessionID, Base64.DEFAULT);
+	
+	        editor.putString("pref_hidden_sessionid", strSessionID);
+	        editor.commit();
+    	}
+    	catch (Exception ex)
+    	{
+    		// no big deal
+    	}
     }
 
 }

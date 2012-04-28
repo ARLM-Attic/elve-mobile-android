@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.nio.channels.UnresolvedAddressException;
 import java.security.MessageDigest;
 //import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     List<Rect> _screenChanges = new ArrayList<Rect>();
 
 	private boolean _isClosed = false;
+	private boolean _failedAuthentication;
 	
     public UptimeClientHandler(ClientBootstrap bootstrap, Timer timer, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._bootstrap = bootstrap;
@@ -88,9 +90,9 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     {
     	// Invoked when a Channel was closed and all its related resources were released.
     	
-    	if (_isClosed == false) // I had to add this because to prevent reconnect AND because the event trigger below caused the call to bootstrap.releaseExternalResources() to hang.
+    	if (_isClosed == false && _failedAuthentication == false) // I had to add this because to prevent reconnect AND because the event trigger below caused the call to bootstrap.releaseExternalResources() to hang.
     	{
-    		_eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.AttemptingToConnect));
+    		_eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.AttemptingToReconnect));
 
 	    	// Clear our incoming data buffer.
 	    	_incomingBuffer.clear();
@@ -130,7 +132,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 			}
 			catch (Exception e1)
 			{
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
         }
@@ -145,7 +146,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 			}
     		catch (Exception e1)
     		{
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
         }
@@ -157,12 +157,19 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     	// Invoked when an exception was raised by an I/O thread or a ChannelHandler.
     	
         Throwable cause = e.getCause();
-        if (cause instanceof ConnectException)
+        if (cause instanceof ConnectException) // this happens when the ip address is wrong or it just can't connect to a valid address
         {
             _startTime = -1;
             println("Failed to connect: " + cause.getMessage());
         }
-        if (cause instanceof ReadTimeoutException)
+        else if (cause instanceof UnresolvedAddressException)
+        {
+        	_eventBus.post(new TouchTcpClientUnresolvedAddressExceptionEventArgs());
+        	
+        	_startTime = -1;
+        	println("Failed to connect: " + cause.getMessage());
+        }
+        else if (cause instanceof ReadTimeoutException)
         {
             // The connection was OK but there was no traffic for last period.
             //println("Disconnecting due to no inbound traffic");
@@ -174,7 +181,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 			}
 			catch (IOException e1)
 			{
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
         }
@@ -227,7 +233,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
 
 
-    	while (true)
+    	while (_isClosed == false)
         {
             //******************************************************************
             // Find the start of the next packet.
@@ -380,7 +386,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     
     private void onMessageReceived(short sequenceNumber, TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload, Channel channel)
     {
-
     	try
     	{
     		println("Received Payload: " + payloadType.toString());
@@ -469,6 +474,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                     }
                     else
                     {
+                    	_failedAuthentication = true;
+                    	
                     	_eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.FailedAuthentication));
 
                     	_eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, null, null));
@@ -533,7 +540,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     	}
     	catch (Exception e)
     	{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -605,7 +611,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }

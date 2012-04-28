@@ -19,6 +19,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
 import android.graphics.Point;
+import android.util.Log;
 
 import com.google.common.eventbus.EventBus;
 
@@ -115,7 +116,6 @@ public class UptimeClient implements Closeable
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -129,7 +129,6 @@ public class UptimeClient implements Closeable
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -145,9 +144,12 @@ public class UptimeClient implements Closeable
 		_timer.stop();
 		
 		// Close the connection and wait until the connection is closed or the connection attempt fails.  Make sure the close operation ends because all I/O operations are asynchronous in Netty.
+		// THIS MUST NOT BE DONE ON THE IO THREAD! or you will get: An Executor cannot be shut down from the thread acquired from itself.  Please make sure you are not calling releaseExternalResources() from an I/O worker thread.
 		_future.getChannel().close().awaitUninterruptibly();
 
 		//Releases the external resources that this object depends on. You should not call this method if the external resources (e.g. thread pool) are in use by other objects. This method simply delegates the call to ChannelFactory.releaseExternalResources(). 
 		_bootstrap.releaseExternalResources();  //This method simply delegates the call to ChannelFactory.releaseExternalResources().
+		
+		Log.d("", "RELEASED all connection related resources.");
 	}
 }

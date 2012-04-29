@@ -14,7 +14,9 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
+import org.jboss.netty.handler.timeout.WriteTimeoutHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
@@ -31,12 +33,9 @@ import com.google.common.eventbus.EventBus;
  */
 public class UptimeClient implements Closeable
 {
-
-    // Sleep 5 seconds before a reconnection attempt.
-    static final int RECONNECT_DELAY = 5;
-
     // Reconnect when the server sends nothing for 60 seconds.
-    private static final int READ_TIMEOUT = 60;
+    private static final int READ_TIMEOUT = 30; // the server will send us a ping every 30 seconds of inactivity
+    private static final int WRITE_TIMEOUT = 14;
     
     private final String _host;
     private final int _port;
@@ -49,7 +48,7 @@ public class UptimeClient implements Closeable
     
     private ClientBootstrap _bootstrap;
     private ChannelFuture _future;
-    private Timer _timer;
+    private Timer _idleTimer;
     private UptimeClientHandler _uptimeHandler;
 
     public UptimeClient(String host, int port, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
@@ -66,7 +65,7 @@ public class UptimeClient implements Closeable
     public void run()
     {
         // Initialize the timer that schedules subsequent reconnection attempts.
-        _timer = new HashedWheelTimer();
+        _idleTimer = new HashedWheelTimer();
 
         // Configure the client.
         final ChannelFactory channelFactory = new NioClientSocketChannelFactory(
@@ -74,23 +73,23 @@ public class UptimeClient implements Closeable
                 Executors.newCachedThreadPool());
         _bootstrap = new ClientBootstrap(channelFactory);
 
-        _uptimeHandler = new UptimeClientHandler(_bootstrap, _timer, _username, _password, _sessionID, _deviceID, _screenSize, _eventBus);
+        _uptimeHandler = new UptimeClientHandler(_bootstrap, _username, _password, _sessionID, _deviceID, _screenSize, _eventBus);
         
         // Configure the pipeline factory.
         _bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
-            private final ChannelHandler timeoutHandler = new ReadTimeoutHandler(_timer, READ_TIMEOUT);
+            private final ChannelHandler idleStateHandler = new IdleStateHandler(_idleTimer, READ_TIMEOUT, WRITE_TIMEOUT, 0);
             
             public ChannelPipeline getPipeline()
             {
-                return Channels.pipeline(timeoutHandler, _uptimeHandler);
+                return Channels.pipeline(idleStateHandler, new ElveIdleStateHandler(), _uptimeHandler);
             }
         });
 
         _bootstrap.setOption("remoteAddress", new InetSocketAddress(_host, _port));
-        //_bootstrap.setOption("child.keepAlive", true);
-        //_bootstrap.setOption("child.tcpNoDelay", true);
-        //_bootstrap.setOption("child.connectTimeoutMillis", 15000);
+        _bootstrap.setOption("keepAlive", true); // I don't know that this will have any effect since the default is to send keepalive packets typically every 2 hours.
+        _bootstrap.setOption("tcpNoDelay", true); // Determines whether Nagle's algorithm is to be used. The Nagle's algorithm tries to conserve bandwidth by minimizing the number of segments that are sent. When applications wish to decrease network latency and increase performance, they can disable Nagle's algorithm (that is enable TCP_NODELAY). Data will be sent earlier, at the cost of an increase in bandwidth consumption.
+        //_bootstrap.setOption("connectTimeoutMillis", 15000);
         
         // On Android 2.2 you must disable IP6 in the Android Emulator otherwise you will see "java.net.SocketException: Bad address family" in the LogCat window and NullPointerException.
         // See http://meteatamel.wordpress.com/2010/08/26/socketexceptions-with-android/
@@ -140,8 +139,8 @@ public class UptimeClient implements Closeable
 		// WE MUST CLOSE THE handler because for some reason the event trigger in channelClosed causes bootstrap.releaseExternalResources to block.
 		_uptimeHandler.close();
 		
-		// Release all resources acquired by the Timer and cancel all tasks which were scheduled but not executed yet. 
-		_timer.stop();
+		// Release all resources acquired by the Timers and cancel all tasks which were scheduled but not executed yet. 
+		_idleTimer.stop();
 		
 		// Close the connection and wait until the connection is closed or the connection attempt fails.  Make sure the close operation ends because all I/O operations are asynchronous in Netty.
 		// THIS MUST NOT BE DONE ON THE IO THREAD! or you will get: An Executor cannot be shut down from the thread acquired from itself.  Please make sure you are not calling releaseExternalResources() from an I/O worker thread.
@@ -152,4 +151,5 @@ public class UptimeClient implements Closeable
 		
 		Log.d("", "RELEASED all connection related resources.");
 	}
+
 }

@@ -4,7 +4,6 @@ import com.codecoretechnologies.elvemobile.communication.TouchEventType;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -17,7 +16,6 @@ import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.widget.ImageView;
@@ -155,12 +153,12 @@ public class ElveTouchScreenActivity extends Activity
 						case MotionEvent.ACTION_UP: 
 							if (actionTime - _lastTouchUpTime <= DOUBLE_TOUCH_INTERVAL)
 							{
-								Log.d("", "DoubleTouch: " + imageX + "," + imageY);
+								Log.d("TS Activity", "DoubleTouch: " + imageX + "," + imageY);
 								CommunicationController.Comm.SendTouchEvent(TouchEventType.DoubleTouch, imageX, imageY);
 							}
 							else
 							{
-								Log.d("", "Touched: " + imageX + "," + imageY);
+								Log.d("TS Activity", "Touched: " + imageX + "," + imageY);
 								CommunicationController.Comm.SendTouchEvent(TouchEventType.Touched, imageX, imageY);
 							}
 							
@@ -176,12 +174,12 @@ public class ElveTouchScreenActivity extends Activity
 								// Throttle the sent mouse moved commands so we don't overload the server.
 								if (actionTime - _lastSendTouchMoveTime > MOVE_SEND_INTERVAL)
 								{
-									Log.d("", "TouchMove: " + imageX + "," + imageY);
+									Log.d("TS Activity", "TouchMove: " + imageX + "," + imageY);
 									CommunicationController.Comm.SendTouchEvent(TouchEventType.TouchMove, imageX, imageY);
 									_lastSendTouchMoveTime = actionTime;
 								}
 								else
-									Log.d("", "SKIP_Move: " + imageX + "," + imageY);
+									Log.d("TS Activity", "SKIP_Move: " + imageX + "," + imageY);
 							}
 							
 							break;
@@ -232,24 +230,38 @@ public class ElveTouchScreenActivity extends Activity
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
     	// Close the ts activity if MENU or BACK is pressed.
-         switch (keyCode)
-         {
-        	 case KeyEvent.KEYCODE_MENU:
-        	 case KeyEvent.KEYCODE_BACK:
-        		 Log.d("TS onKeyDown", "MENU or BACK button presses, closing TS activity.");
-        		 finish();
-        		 return true;
-         }
-         return false;
-    } 
+        switch (keyCode)
+        {
+        	case KeyEvent.KEYCODE_MENU:
+        	case KeyEvent.KEYCODE_BACK:
+        		 
+    			Log.d("TS onKeyDown", "MENU or BACK button presses, Calling CommunicationController.Close()");
+    			CommunicationController.Close(); // this will close this activity as well.
+        		return true;
+        }
+        return false;
+    }
+    
+    @Override
+    protected void onPause()
+    {
+    	Log.d("TS onPause", "Entered onPause()");
+    	
+    	super.onPause();
+    }
+    
+    @Override
+    protected void onStop()
+    {
+    	Log.d("TS onStop", "Entered onStop()");
+    	
+    	super.onStop();
+    }
 
     @Override
     protected void onDestroy()
     {
     	Log.d("TS onDestroy", "Entered onDestroy()");
-
-    	Log.d("TS onDestroy", "Calling CommunicationController.Close()");
-		CommunicationController.Close();
     	 
     	super.onDestroy();
     }

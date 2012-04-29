@@ -105,6 +105,7 @@ public class CommunicationController
     	{
 	    	_isClosing = true;
 	    	
+
 	    	_eventbus.unregister(_eventHandler);
 	    	_eventHandler = null;
 	    	_eventbus = null;		
@@ -266,8 +267,8 @@ public class CommunicationController
 	 static class temporaryEventHolder // TODO: move the events somewhere that makes sense.
 	 {
 		private boolean _hasReceivedFirstImage = false;
-		 
-		
+
+
 		@Subscribe
 	    public void handleTouchTcpClientUnresolvedAddressExceptionEventArgs(TouchTcpClientUnresolvedAddressExceptionEventArgs eventArgs)
 	    {
@@ -276,15 +277,18 @@ public class CommunicationController
             
             Close();
 	    }
+
 	    @Subscribe
 	    public void handleTouchTcpClientExceptionEventArgs(TouchTcpClientExceptionEventArgs eventArgs)
 	    {
 	    	// FUTURE TODO: a protocol error occured. There is probably nothing to do here since the communication object will automatically restart the connection.
 	    }
-	
+
 	    @Subscribe
 	    public void handleTouchTcpClientStateChangedEventArgs(TouchTcpClientStateChangedEventArgs eventArgs)
 	    {
+	    	_hasReceivedFirstImage = false; // make sure the ts activity will be shown when we receive the 1st image.
+
 	    	String text = "";
 	        switch (eventArgs.State)
 	        {

@@ -7,7 +7,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.MessageDigest;
-//import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -25,6 +24,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.timeout.ReadTimeoutException;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
@@ -43,7 +43,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 {
 
     private final ClientBootstrap _bootstrap;
-    private final Timer _timer;
+    private Timer _reconnectTimer;
     private long _startTime = -1;
     private final String _username;
     private final String _password;
@@ -62,15 +62,19 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 	private boolean _isClosed = false;
 	private boolean _failedAuthentication;
 	
-    public UptimeClientHandler(ClientBootstrap bootstrap, Timer timer, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
+    // Sleep 5 seconds before a reconnection attempt.
+    static final int RECONNECT_DELAY = 5;
+
+    public UptimeClientHandler(ClientBootstrap bootstrap, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._bootstrap = bootstrap;
-        this._timer = timer;
         this._username = username;
         this._password = password;
         this._sessionID = sessionID;
         this._deviceID = deviceID;
         this._screenSize = screenSize;
         this._eventBus = eventBus;
+        
+        _reconnectTimer = new HashedWheelTimer();
     }
 
     InetSocketAddress getRemoteAddress()
@@ -97,15 +101,15 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 	    	// Clear our incoming data buffer.
 	    	_incomingBuffer.clear();
 
-	        println("Sleeping for: " + UptimeClient.RECONNECT_DELAY + "s");
-	        _timer.newTimeout(new TimerTask()
+	        Log.d("Channel Closed","Sleeping for: " + RECONNECT_DELAY + "s, will then reconnect.");
+	        _reconnectTimer.newTimeout(new TimerTask()
 	        {
 	            public void run(Timeout timeout) //throws Exception
 	            {
 	                println("Reconnecting to: " + getRemoteAddress());
 	                _bootstrap.connect();
 	            }
-	        }, UptimeClient.RECONNECT_DELAY, TimeUnit.SECONDS);
+	        }, RECONNECT_DELAY, TimeUnit.SECONDS);
     	}
     }
 
@@ -155,7 +159,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
     	// Invoked when an exception was raised by an I/O thread or a ChannelHandler.
-    	
+    	//NotYetConnectedException  this occurs when you send (and maybe receive data) when the connection is closed
         Throwable cause = e.getCause();
         if (cause instanceof ConnectException) // this happens when the ip address is wrong or it just can't connect to a valid address
         {
@@ -321,7 +325,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
      * Returns a little endian byte array representation of the full message (header + payload).
      * @throws IOException 
      */
-    public byte[] generateMessage(IBinaryTcpPayload payload) throws IOException
+    public static byte[] generateMessage(IBinaryTcpPayload payload) throws IOException
     {
     	return generateMessage(payload.PayloadType(), payload.ToByteArray());
     }
@@ -330,7 +334,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
      * Returns a little endian byte array representation of the full message (header + payload).
      * @throws IOException 
      */
-    public byte[] generateMessage(TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload) throws IOException
+    public static byte[] generateMessage(TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload) throws IOException
     {
         if (payload == null)
             payload = new byte[0];
@@ -363,7 +367,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
      * Generates a full message (header + payload) and writes it to the channel.
      * @throws IOException 
      */
-    public void sendMessage(IBinaryTcpPayload payload, Channel channel) throws IOException
+    public static void sendMessage(IBinaryTcpPayload payload, Channel channel) throws IOException
     {
     	sendMessage(payload.PayloadType(), payload.ToByteArray(), channel);
     }
@@ -371,7 +375,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
      * Generates a full message (header + payload) and writes it to the channel.
      * @throws IOException 
      */
-    private void sendMessage(TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload, Channel channel) throws IOException
+    static void sendMessage(TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload, Channel channel) throws IOException
     {
     	byte[] msg = generateMessage(payloadType, payload);
 		
@@ -620,6 +624,13 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 		// YOU MUST CALL THIS BEFORE CALLING releaseExternalResources() on the factory or bootstrap!!!
 		
 		_isClosed = true;
+		
+		// Release all resources acquired by the Timers and cancel all tasks which were scheduled but not executed yet.
+		if (_reconnectTimer != null)
+		{
+			_reconnectTimer.stop();
+			_reconnectTimer = null;
+		}
 		
 		_channel = null;
 		if (_screenChangeTimer != null)

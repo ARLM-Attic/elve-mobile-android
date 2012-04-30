@@ -20,6 +20,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.provider.Settings.Secure;
 import android.util.Log;
 import android.view.Display;
@@ -210,13 +211,13 @@ public class CommunicationController
 	}
 	
     
-    static void showAlert(final String message)
+    static void showAlert(final String message, final Activity activity)
     {
-        ParentPrefsActivity.runOnUiThread(new Runnable()
+    	activity.runOnUiThread(new Runnable()
 		{
 			public void run()
 			{
-        		AlertDialog alertDialog = new AlertDialog.Builder(CommunicationController.ParentPrefsActivity).create();  
+        		AlertDialog alertDialog = new AlertDialog.Builder(activity).create();  
         	    alertDialog.setTitle("Preferences");  
         	    alertDialog.setMessage(message);  
         	    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {  
@@ -228,6 +229,8 @@ public class CommunicationController
 			}
 		});
     }
+        
+    
 
 	private static void finishTouchScreenActivity()
 	{
@@ -273,7 +276,7 @@ public class CommunicationController
 	    public void handleTouchTcpClientUnresolvedAddressExceptionEventArgs(TouchTcpClientUnresolvedAddressExceptionEventArgs eventArgs)
 	    {
             // Show the message in a closable alert.
-            showAlert("The server address setting is invalid.");
+            showAlert("The server address setting is invalid.", CommunicationController.ParentPrefsActivity);
             
             Close();
 	    }
@@ -342,7 +345,7 @@ public class CommunicationController
 	
 
 	            // Show the message in a closable alert.
-	            showAlert(message);
+	            showAlert(message, CommunicationController.ParentPrefsActivity);
 	            
 	            Close();
 	            

@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import android.graphics.*;
+import android.util.Log;
 
 public class BinaryStreamReader implements Closeable
 {
@@ -139,9 +140,20 @@ public class BinaryStreamReader implements Closeable
         try
         {
         	in = new ByteArrayInputStream(b);
+
+        	// You can reduce an images quality or scale(?) by setting a sample size if loading the bitmap throws an OutOfMemoryError.
+        	// see http://stackoverflow.com/questions/477572/android-strange-out-of-memory-issue-while-loading-an-image-to-a-bitmap-object/823966#823966
+        	//BitmapFactory.Options o = new BitmapFactory.Options();
+        	//o.inSampleSize = 2;
+        	//Bitmap image = BitmapFactory.decodeByteArray(b, 0, b.length, o);
+
         	Bitmap image = BitmapFactory.decodeByteArray(b, 0, b.length);
         	return image;
         }
+//        catch (OutOfMemoryError ex)
+//        {
+//        	Log.e("READIMAGE", "ERROR occured in ReadImage().", ex);
+//        }
         finally
         {
         	if (in != null)

@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -18,12 +19,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.DynamicChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.timeout.ReadTimeoutException;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
@@ -173,24 +174,9 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
         	_startTime = -1;
         	println("Failed to connect: " + cause.getMessage());
         }
-        else if (cause instanceof ReadTimeoutException)
-        {
-            // The connection was OK but there was no traffic for last period.
-            //println("Disconnecting due to no inbound traffic");
-        	println("Sending ping since no inbound traffic in a while.");
-            try
-			{
-				sendMessage(TouchServiceTcpCommunicationPayloadTypes.Ping, null, ctx.getChannel());
-				return; // don't close the channel.
-			}
-			catch (IOException e1)
-			{
-				e1.printStackTrace();
-			}
-        }
         else
         {
-            cause.printStackTrace();
+        	Log.e("COMM EXCEPTION", "An unknown exception occurred in the communication class.", cause);
         }
         ctx.getChannel().close();
     }
@@ -209,76 +195,85 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     
     
     
-    List<Byte> _incomingBuffer = new ArrayList<Byte>(); // TODO: use something more efficient, maybe ByteArrayOutputStream?
+    ChannelBuffer _incomingBuffer = new DynamicChannelBuffer(ByteOrder.LITTLE_ENDIAN, 32000); // Use little-endian since that's that order that the server sends data (Microsoft .Net uses little endian).
     RendererHeader _rendererHeader;
     boolean _haveRendererHeader = false;
 
     
+    
     @Override
     public void messageReceived(ChannelHandlerContext ctx, org.jboss.netty.channel.MessageEvent e) throws IOException
     {
-    	// Invoked when a message object (e.g: ChannelBuffer) was received from a remote peer.
-    	
-    	// Send back the received message to the remote peer.
-    	ChannelBuffer msg = (ChannelBuffer)e.getMessage();
-    	
-    	int byteCount = msg.readableBytes();
-    	transferredBytes.addAndGet(byteCount);
-    	
-    	// Read bytes
-    	byte[] b = new byte[byteCount];
-    	msg.getBytes(0, b);
+    	try
+    	{
+	    	// Invoked when a message object (e.g: ChannelBuffer) was received from a remote peer.
+	    	
+	    	// Send back the received message to the remote peer.
+	    	ChannelBuffer msg = (ChannelBuffer)e.getMessage();
+	
+	    	int byteCount = msg.readableBytes();
+	    	transferredBytes.addAndGet(byteCount);
+	    	
+	    	//Log.d("COMM", "Received " + byteCount + " bytes.");
+	    	
+	    	// Read bytes into our local buffer.
+	    	_incomingBuffer.writeBytes(msg);
+	
+	    	//Log.d("COMM", "Transfered " + byteCount + " bytes to _incomingBuffer.");
+	
+	
+	
+	    	while (_isClosed == false)
+	        {
+	            //******************************************************************
+	            // Find the start of the next packet.
+	            //******************************************************************
+	            if (_haveRendererHeader == false)
+	            {
+	            	RendererHeader rendererHeader = getNextValidRendererHeader();
+	                if (rendererHeader == null)
+	                    return; // no header is available yet
+	                
+	                Log.d("COMM", "Received Payload Header for " + rendererHeader.PayloadType.name() + ", payload size: " + rendererHeader.PayloadLength);
+	
+	                _rendererHeader = rendererHeader;
+	                _haveRendererHeader = true;
+	            }
+	            
+	
+	            //******************************************************************
+	            // Read and process the payload.
+	            //******************************************************************
+	            if (_incomingBuffer.readableBytes() < _rendererHeader.PayloadLength)
+	            {
+	            	//Log.d("COMM", "Still waiting for " + (_rendererHeader.PayloadLength - _incomingBuffer.readableBytes()) + " payload bytes.");
+	                return; // the full payload has not been received yet
+	            }
 
-    	// Add bytes to buffer
-    	for (int i = 0; i < b.length; i++)
-    		_incomingBuffer.add(b[i]);
 
 
-
-
-
-    	while (_isClosed == false)
-        {
-            //******************************************************************
-            // Find the start of the next packet.
-            //******************************************************************
-            if (_haveRendererHeader == false)
-            {
-            	RendererHeader rendererHeader = getNextValidRendererHeader();
-                if (rendererHeader == null)
-                    return; // no header is available yet
-
-                _rendererHeader = rendererHeader;
-                _haveRendererHeader = true;
-            }
-            
-
-            //******************************************************************
-            // Read and process the payload.
-            //******************************************************************
-            if (_incomingBuffer.size() < _rendererHeader.PayloadLength)
-                return; // the full payload has not been received yet
-
-            //******************************************************************
-            // Read Payload
-            //******************************************************************
-            // TODO: THERE HAS GOT TO BE A BETTER WAY IN JAVA TO DO THIS!!!
-            byte[] payload = new byte[_rendererHeader.PayloadLength];
-            for (int i = 0; i < _rendererHeader.PayloadLength; i++)
-            {
-            	payload[i] = _incomingBuffer.get(0);
-            	_incomingBuffer.remove(0); // Remove read byte from buffer
-            }
-
-            
-
-            //******************************************************************
-            // MessageReceived Event
-            //******************************************************************
-            onMessageReceived(_rendererHeader.SequenceNumber, _rendererHeader.PayloadType, payload, e.getChannel());
-
-            _haveRendererHeader = false;
-        }
+	            //******************************************************************
+	            // Read Payload
+	            //******************************************************************
+	            Log.d("COMM", "Allocating payload byte array of " + _rendererHeader.PayloadLength + " bytes.");
+	            byte[] payload = new byte[_rendererHeader.PayloadLength];
+	            Log.d("COMM", "Beginning transfer from _incomingBuffer to payload byte array.");
+	            _incomingBuffer.readBytes(payload);
+	            Log.d("COMM", "Received full payload.");
+	            
+	
+	            //******************************************************************
+	            // MessageReceived Event
+	            //******************************************************************
+	            onMessageReceived(_rendererHeader.SequenceNumber, _rendererHeader.PayloadType, payload, e.getChannel());
+	
+	            _haveRendererHeader = false;
+	        }
+    	}
+    	catch (Exception ex)
+    	{
+    		Log.e("COMM", "ERROR in messageReceived", ex);
+    	}
     }
 
 	private RendererHeader getNextValidRendererHeader() throws IOException
@@ -287,27 +282,24 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
         while (true)
         {
-            if (_incomingBuffer.size() < HL)
-                break;
-
-            long bolPos = _incomingBuffer.indexOf((byte)0);
-            if (bolPos < 0 || _incomingBuffer.size() < bolPos + HL)
-                break;
-
-        	// Extract header bytes to temp buffer
-            // TODO: THERE HAS GOT TO BE A BETTER WAY IN JAVA TO DO THIS!!!
-            byte[] b = new byte[HL];
-        	for (int i = 0; i < b.length; i++)
-        	{
-        		b[i] = _incomingBuffer.get(0);
-        		_incomingBuffer.remove(0);
-        	}
+        	int byteCount = _incomingBuffer.readableBytes();
         	
-            RendererHeader readHeader = new RendererHeader(b);
-            if (readHeader.IsValid())
-            {
-                return readHeader;
-            }
+        	if (byteCount < HL)
+              break;
+        	
+        	long bolPos = _incomingBuffer.indexOf(0, byteCount, (byte)0);
+            if (bolPos < 0 || byteCount < bolPos + HL)
+                break;
+
+            // Get the header bytes.
+            byte[] b = new byte[HL];
+            _incomingBuffer.readBytes(b);
+            
+			RendererHeader readHeader = new RendererHeader(b);
+			if (readHeader.IsValid())
+			{
+				return readHeader;
+			}
         }
 
         return null;
@@ -392,7 +384,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     {
     	try
     	{
-    		println("Received Payload: " + payloadType.toString());
+    		Log.d("COMM", "Processing Payload: " + payloadType.toString());
     		
 			switch(payloadType)
 			{
@@ -544,7 +536,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     	}
     	catch (Exception e)
     	{
-			e.printStackTrace();
+    		Log.e("COMM", "ERROR in onMessageReceived", e);
 		}
 	}
     

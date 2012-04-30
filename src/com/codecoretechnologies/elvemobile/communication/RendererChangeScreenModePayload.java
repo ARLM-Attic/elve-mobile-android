@@ -2,25 +2,32 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 public class RendererChangeScreenModePayload implements IBinaryTcpPayload
 {
     public ScreenMode ScreenModeVal;
 
-    public RendererChangeScreenModePayload(byte[] data) throws IOException
+    public RendererChangeScreenModePayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	ScreenModeVal = ScreenMode.getFromValue(sr.ReadByte());
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+       	ScreenModeVal = ScreenMode.getFromValue(buffer.readByte());
     }
+    
+//    public RendererChangeScreenModePayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	ScreenModeVal = ScreenMode.getFromValue(sr.ReadByte());
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public RendererChangeScreenModePayload(ScreenMode screenMode)
     {

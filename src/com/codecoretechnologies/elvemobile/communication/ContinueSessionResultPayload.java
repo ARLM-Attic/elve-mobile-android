@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 import android.graphics.Point;
 
 
@@ -11,23 +13,30 @@ public class ContinueSessionResultPayload implements IBinaryTcpPayload
     public Point TouchScreenSize;
     public int BackgroundColor;
 
-    public ContinueSessionResultPayload(byte[] data) throws IOException
+    public ContinueSessionResultPayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	Result = ContinueSessionResults.getFromValue(sr.ReadByte());
-            TouchScreenSize = sr.ReadSize();
-            BackgroundColor = sr.ReadColor();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+    	Result = ContinueSessionResults.getFromValue(buffer.readByte());
+        TouchScreenSize = ChannelBufferIO.readSize(buffer);
+        BackgroundColor = ChannelBufferIO.readColor(buffer);
     }
+    
+//    public ContinueSessionResultPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	Result = ContinueSessionResults.getFromValue(sr.ReadByte());
+//            TouchScreenSize = sr.ReadSize();
+//            BackgroundColor = sr.ReadColor();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public ContinueSessionResultPayload(ContinueSessionResults continueSessionResult, Point touchScreenSize, int backgroundColor)
     {

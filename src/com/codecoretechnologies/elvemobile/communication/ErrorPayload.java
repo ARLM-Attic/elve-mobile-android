@@ -1,6 +1,9 @@
 package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.jboss.netty.buffer.ChannelBuffer;
 
 public class ErrorPayload implements IBinaryTcpPayload
 {
@@ -9,24 +12,32 @@ public class ErrorPayload implements IBinaryTcpPayload
     public String ExceptionTypeName;
     public String Source;
 
-    public ErrorPayload(byte[] data) throws IOException
+    public ErrorPayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	Title = sr.ReadString();
-            Message = sr.ReadString();
-            ExceptionTypeName = sr.ReadString();
-            Source = sr.ReadString();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+    	Title = ChannelBufferIO.readString(buffer);
+        Message = ChannelBufferIO.readString(buffer);
+        ExceptionTypeName = ChannelBufferIO.readString(buffer);
+        Source = ChannelBufferIO.readString(buffer);
     }
+    
+//    public ErrorPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	Title = sr.ReadString();
+//            Message = sr.ReadString();
+//            ExceptionTypeName = sr.ReadString();
+//            Source = sr.ReadString();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public ErrorPayload(String title, String exceptionTypeName, String message, String source)
     {

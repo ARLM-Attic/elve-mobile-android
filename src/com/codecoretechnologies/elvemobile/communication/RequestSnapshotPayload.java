@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 import android.graphics.Rect;
 
 
@@ -9,21 +11,26 @@ public class RequestSnapshotPayload implements IBinaryTcpPayload
 {
     public Rect Bounds;
 
-    public RequestSnapshotPayload(byte[] data) throws IOException
+    public RequestSnapshotPayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-            Bounds = sr.ReadRectangle();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        Bounds = ChannelBufferIO.readRectangle(buffer);
     }
+    
+//    public RequestSnapshotPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//            Bounds = sr.ReadRectangle();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public RequestSnapshotPayload(Rect bounds)
     {

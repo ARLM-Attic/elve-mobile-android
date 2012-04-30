@@ -2,8 +2,9 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
-import android.graphics.Point;
+import org.jboss.netty.buffer.ChannelBuffer;
 
+import android.graphics.Point;
 
 public class AuthenticationResultPayload implements IBinaryTcpPayload
 {
@@ -12,38 +13,61 @@ public class AuthenticationResultPayload implements IBinaryTcpPayload
     public int BackgroundColor;
     public byte[] SessionID; // added to version Elve 2.0 (however the protocol version has not changed).
 
-    public AuthenticationResultPayload(byte[] data) throws IOException
+    public AuthenticationResultPayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-    		sr = new BinaryStreamReader(data);
-    		AuthenticationResult = TouchServiceTcpCommunicationAuthenticationResults.getFromValue(sr.ReadByte());
-            TouchScreenSize = sr.ReadSize();
-            BackgroundColor = sr.ReadColor();
+		AuthenticationResult = TouchServiceTcpCommunicationAuthenticationResults.getFromValue(buffer.readByte());
+        TouchScreenSize = ChannelBufferIO.readSize(buffer);
+        BackgroundColor = ChannelBufferIO.readColor(buffer);
 
-            // Elve 2.0 added a new session id which we can detect using the payload data length.
-            SessionID = null;
-            if (data.length > 9)
-            {
-            	byte[] sessionID = sr.ReadByteArrayWithLength(); // guid=16 bytes
-            	// If the session id is all zeros then there is no session id.
-            	for (int i=0; i< sessionID.length; i++)
-            	{
-            		if (sessionID[i] != 0)
-            		{
-            			SessionID = sessionID;
-            			break;
-            		}
-            	}
-            }
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        // Elve 2.0 added a new session id which we can detect using the payload data length.
+        SessionID = null;
+        if (buffer.readableBytes() > 9)
+        {
+        	byte[] sessionID = ChannelBufferIO.readByteArrayWithLength(buffer); // guid=16 bytes
+        	// If the session id is all zeros then there is no session id.
+        	for (int i=0; i< sessionID.length; i++)
+        	{
+        		if (sessionID[i] != 0)
+        		{
+        			SessionID = sessionID;
+        			break;
+        		}
+        	}
+        }
     }
+    
+//    public AuthenticationResultPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//    		sr = new BinaryStreamReader(data);
+//    		AuthenticationResult = TouchServiceTcpCommunicationAuthenticationResults.getFromValue(sr.ReadByte());
+//            TouchScreenSize = sr.ReadSize();
+//            BackgroundColor = sr.ReadColor();
+//
+//            // Elve 2.0 added a new session id which we can detect using the payload data length.
+//            SessionID = null;
+//            if (data.length > 9)
+//            {
+//            	byte[] sessionID = sr.ReadByteArrayWithLength(); // guid=16 bytes
+//            	// If the session id is all zeros then there is no session id.
+//            	for (int i=0; i< sessionID.length; i++)
+//            	{
+//            		if (sessionID[i] != 0)
+//            		{
+//            			SessionID = sessionID;
+//            			break;
+//            		}
+//            	}
+//            }
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public AuthenticationResultPayload(TouchServiceTcpCommunicationAuthenticationResults authenticationResult, Point touchScreenSize, int backgroundColor, byte[] sessionID_16bytes)
     {

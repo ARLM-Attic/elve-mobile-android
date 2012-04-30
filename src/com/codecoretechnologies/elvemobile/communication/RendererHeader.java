@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 public class RendererHeader
 {
     public final static int RENDERERHEADERBYTELENGTH = 11;
@@ -26,28 +28,40 @@ public class RendererHeader
 
         this.HeaderChecksum = calculateHeaderChecksum();
     }
-
-    public RendererHeader(byte[] data) throws IOException 
+    
+    public RendererHeader(ChannelBuffer buffer) throws IOException 
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-            this.BeginningOfHeader = sr.ReadByte();
-            this.SequenceNumber = sr.ReadUInt16(); // UInt16 ---- Java doesn't support signed types
-            this.PayloadType = TouchServiceTcpCommunicationPayloadTypes.getFromValue(sr.ReadByte());
-            this.PayloadLength = sr.ReadUInt32(); // UInt32 ---- Java doesn't support signed types
-            this.PayloadChecksum = sr.ReadByte();
-            this.HeaderChecksum = sr.ReadByte();
-            this.EndOfHeader = sr.ReadByte();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        this.BeginningOfHeader = buffer.readByte();
+        this.SequenceNumber = buffer.readShort(); // UInt16 ---- Java doesn't support signed types
+        this.PayloadType = TouchServiceTcpCommunicationPayloadTypes.getFromValue(buffer.readByte());
+        this.PayloadLength = buffer.readInt(); // UInt32 ---- Java doesn't support signed types
+        this.PayloadChecksum = buffer.readByte();
+        this.HeaderChecksum = buffer.readByte();
+        this.EndOfHeader = buffer.readByte();
     }
+
+// old, replaced with channel buffer    
+//    public RendererHeader(byte[] data) throws IOException 
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//            this.BeginningOfHeader = sr.ReadByte();
+//            this.SequenceNumber = sr.ReadUInt16(); // UInt16 ---- Java doesn't support signed types
+//            this.PayloadType = TouchServiceTcpCommunicationPayloadTypes.getFromValue(sr.ReadByte());
+//            this.PayloadLength = sr.ReadUInt32(); // UInt32 ---- Java doesn't support signed types
+//            this.PayloadChecksum = sr.ReadByte();
+//            this.HeaderChecksum = sr.ReadByte();
+//            this.EndOfHeader = sr.ReadByte();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public boolean IsValid() throws IOException
     {

@@ -1,6 +1,9 @@
 package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.jboss.netty.buffer.ChannelBuffer;
 
 import android.graphics.Point;
 
@@ -16,31 +19,46 @@ public class HelloPayload implements IBinaryTcpPayload
     public String UniqueClientID; // The unique identifier of the device.  iphone should use UIDevice.UniqueIdentifier. This is used to help limit the # of touch screens.
 
 
-	public HelloPayload(byte[] data) throws IOException
+    public HelloPayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	ProtocolVersion = sr.ReadByte();
-            ApplicationID = sr.ReadByte();
-            this.RenderingModeVal = RenderingMode.getFromValue(sr.ReadByte());
-            ScreenSize = sr.ReadSize();
-            PixelDepthByteCount = sr.ReadByte();
-            SupportsAlphaChannel = sr.ReadBoolean();
+    	ProtocolVersion = buffer.readByte();
+        ApplicationID = buffer.readByte();
+        this.RenderingModeVal = RenderingMode.getFromValue(buffer.readByte());
+        ScreenSize = ChannelBufferIO.readSize(buffer);
+        PixelDepthByteCount = buffer.readByte();
+        SupportsAlphaChannel = ChannelBufferIO.readBoolean(buffer);
 
-            if (data.length > 9)
-                UniqueClientID = sr.ReadString();
-            else
-                UniqueClientID = "";
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        if (buffer.readableBytes() > 9)
+            UniqueClientID = ChannelBufferIO.readString(buffer);
+        else
+            UniqueClientID = "";
     }
+    
+//	public HelloPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	ProtocolVersion = sr.ReadByte();
+//            ApplicationID = sr.ReadByte();
+//            this.RenderingModeVal = RenderingMode.getFromValue(sr.ReadByte());
+//            ScreenSize = sr.ReadSize();
+//            PixelDepthByteCount = sr.ReadByte();
+//            SupportsAlphaChannel = sr.ReadBoolean();
+//
+//            if (data.length > 9)
+//                UniqueClientID = sr.ReadString();
+//            else
+//                UniqueClientID = "";
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public HelloPayload(byte protocolVersion, byte applicationID, RenderingMode renderingMode, Point screenSize, int pixelDepthByteCount, boolean supportsAlphaChannel, String uniqueClientID)
     {

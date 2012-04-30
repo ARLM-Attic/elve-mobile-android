@@ -1,28 +1,37 @@
 package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.jboss.netty.buffer.ChannelBuffer;
 
 public class RendererShowMessagePayload implements IBinaryTcpPayload
 {
     public byte DisplayMode;
     public String Text;
 
-    public RendererShowMessagePayload(byte[] data) throws IOException
+    public RendererShowMessagePayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	DisplayMode = sr.ReadByte();
-            Text = sr.ReadString();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+    	DisplayMode = buffer.readByte();
+        Text = ChannelBufferIO.readString(buffer);
     }
+    
+//    public RendererShowMessagePayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	DisplayMode = sr.ReadByte();
+//            Text = sr.ReadString();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public RendererShowMessagePayload(byte displayMode, String text)
     {

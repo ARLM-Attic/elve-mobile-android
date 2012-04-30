@@ -3,6 +3,8 @@ package com.codecoretechnologies.elvemobile.communication;
 import java.io.Closeable;
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 
@@ -13,24 +15,32 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
     public ImageSizeMode SizeMode;
     public Bitmap Image;
 
-    public RendererDrawImagePayload(byte[] data) throws IOException
+    public RendererDrawImagePayload(ChannelBuffer buffer) throws IOException
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-            Bounds = sr.ReadRectangle();
-            Opacity = sr.ReadUnsignedByte();
-            SizeMode = ImageSizeMode.getFromValue(sr.ReadByte());
-            Image = sr.ReadImage();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+    	Bounds = ChannelBufferIO.readRectangle(buffer);
+        Opacity = buffer.readUnsignedByte();
+        SizeMode = ImageSizeMode.getFromValue(buffer.readByte());
+        Image = ChannelBufferIO.readImage(buffer);
     }
+
+//    public RendererDrawImagePayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//            Bounds = sr.ReadRectangle();
+//            Opacity = sr.ReadUnsignedByte();
+//            SizeMode = ImageSizeMode.getFromValue(sr.ReadByte());
+//            Image = sr.ReadImage();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public RendererDrawImagePayload(Rect bounds, int opacity, ImageSizeMode sizeMode, Bitmap img)
     {
@@ -48,7 +58,7 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
     public byte[] ToByteArray() throws IOException
     {
     	return null;
-    	
+
 // not used in client
 //		BinaryStreamWriter sw = null;
 //        try
@@ -68,10 +78,8 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
 //        }
     }
 
-
 	public void close()
 	{
 		Image = null;
 	}
-   
 }

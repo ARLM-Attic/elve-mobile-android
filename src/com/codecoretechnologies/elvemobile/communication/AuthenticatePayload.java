@@ -1,6 +1,9 @@
 package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import org.jboss.netty.buffer.ChannelBuffer;
 
 public class AuthenticatePayload implements IBinaryTcpPayload
 {
@@ -8,23 +11,30 @@ public class AuthenticatePayload implements IBinaryTcpPayload
     public byte[] Token; // Authentication Token from client in hex
     public byte[] Hash;  // resulting hash
 
-    public AuthenticatePayload(byte[] data) throws IOException
+    public AuthenticatePayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-            Username = sr.ReadString();
-            Token = sr.ReadByteArrayWithLength();
-            Hash = sr.ReadByteArrayWithLength();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        Username = ChannelBufferIO.readString(buffer);
+        Token = ChannelBufferIO.readByteArrayWithLength(buffer);
+        Hash = ChannelBufferIO.readByteArrayWithLength(buffer);
     }
+    
+//    public AuthenticatePayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//            Username = sr.ReadString();
+//            Token = sr.ReadByteArrayWithLength();
+//            Hash = sr.ReadByteArrayWithLength();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public AuthenticatePayload(String username, byte[] token, byte[] hash)
     {

@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 public class LocationChangeEventPayload implements IBinaryTcpPayload
 {
     public double Latitude;
@@ -10,25 +12,34 @@ public class LocationChangeEventPayload implements IBinaryTcpPayload
     public double Course;
     public double SpeedMetersPerSecond;
 
-    public LocationChangeEventPayload(byte[] data) throws IOException
+    public LocationChangeEventPayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-            Latitude = sr.ReadDouble();
-            Longitude = sr.ReadDouble();
-            Altitude = sr.ReadDouble();
-            Course = sr.ReadDouble();
-            SpeedMetersPerSecond = sr.ReadDouble();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+        Latitude = buffer.readDouble();
+        Longitude = buffer.readDouble();
+        Altitude = buffer.readDouble();
+        Course = buffer.readDouble();
+        SpeedMetersPerSecond = buffer.readDouble();
     }
+    
+//    public LocationChangeEventPayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//            Latitude = sr.ReadDouble();
+//            Longitude = sr.ReadDouble();
+//            Altitude = sr.ReadDouble();
+//            Course = sr.ReadDouble();
+//            SpeedMetersPerSecond = sr.ReadDouble();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public LocationChangeEventPayload(double latitude, double longitude, double altitude, double course, double speedMetersPerSecond)
     {

@@ -250,22 +250,10 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 	                return; // the full payload has not been received yet
 	            }
 
-
-
-	            //******************************************************************
-	            // Read Payload
-	            //******************************************************************
-	            Log.d("COMM", "Allocating payload byte array of " + _rendererHeader.PayloadLength + " bytes.");
-	            byte[] payload = new byte[_rendererHeader.PayloadLength];
-	            Log.d("COMM", "Beginning transfer from _incomingBuffer to payload byte array.");
-	            _incomingBuffer.readBytes(payload);
-	            Log.d("COMM", "Received full payload.");
-	            
-	
 	            //******************************************************************
 	            // MessageReceived Event
 	            //******************************************************************
-	            onMessageReceived(_rendererHeader.SequenceNumber, _rendererHeader.PayloadType, payload, e.getChannel());
+	            onMessageReceived(_rendererHeader.SequenceNumber, _rendererHeader.PayloadType, e.getChannel());
 	
 	            _haveRendererHeader = false;
 	        }
@@ -291,11 +279,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
             if (bolPos < 0 || byteCount < bolPos + HL)
                 break;
 
-            // Get the header bytes.
-            byte[] b = new byte[HL];
-            _incomingBuffer.readBytes(b);
+            RendererHeader readHeader = new RendererHeader(_incomingBuffer);
             
-			RendererHeader readHeader = new RendererHeader(b);
 			if (readHeader.IsValid())
 			{
 				return readHeader;
@@ -379,8 +364,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     
     
     
-    
-    private void onMessageReceived(short sequenceNumber, TouchServiceTcpCommunicationPayloadTypes payloadType, byte[] payload, Channel channel)
+    private void onMessageReceived(short sequenceNumber, TouchServiceTcpCommunicationPayloadTypes payloadType, Channel channel)
     {
     	try
     	{
@@ -402,7 +386,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 case Error:
 
                     // The server will automatically disconnect after sending the error to us.
-                    ErrorPayload errorPayload = new ErrorPayload(payload);
+                    ErrorPayload errorPayload = new ErrorPayload(_incomingBuffer);
 
                     //System.Diagnostics.Debug.WriteLine(DateTime.Now.ToString() + "  **** Error Command. Message: " + errorPayload.Message);
 
@@ -412,7 +396,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                     
                 case ContinueSessionResult:
 
-                    ContinueSessionResultPayload contSessResult = new ContinueSessionResultPayload(payload);
+                    ContinueSessionResultPayload contSessResult = new ContinueSessionResultPayload(_incomingBuffer);
 
                     if (contSessResult.Result == ContinueSessionResults.Success)
                     {
@@ -434,7 +418,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
                 case AuthenticateChallenge:
 
-                    AuthenticationChallengePayload challenge = new AuthenticationChallengePayload(payload);
+                    AuthenticationChallengePayload challenge = new AuthenticationChallengePayload(_incomingBuffer);
 
                     // Create new random token
                     byte[] t2 = new byte[16];
@@ -457,7 +441,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
                 case AuthenticationResult:
 
-                    AuthenticationResultPayload authResult = new AuthenticationResultPayload(payload);
+                    AuthenticationResultPayload authResult = new AuthenticationResultPayload(_incomingBuffer);
 
 
                     if (authResult.AuthenticationResult == TouchServiceTcpCommunicationAuthenticationResults.Success)
@@ -481,7 +465,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 
                 case ScreenChange:
 
-                    RendererScreenChangePayload screenChange = new RendererScreenChangePayload(payload);
+                    RendererScreenChangePayload screenChange = new RendererScreenChangePayload(_incomingBuffer);
 
                     //Console.WriteLine(DateTime.Now.ToString() + "  **** TouchClient processing ScreenChange. X=" + screenChange.Bounds.X + ", Y=" + screenChange.Bounds.Y + ", Width=" + screenChange.Bounds.Width + ", Height=" + screenChange.Bounds.Height);
 
@@ -519,7 +503,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 	RendererDrawImagePayload drawImagePayload = null;
                 	try
                 	{
-                		drawImagePayload = new RendererDrawImagePayload(payload);
+                		//drawImagePayload = new RendererDrawImagePayload(payload);
+                		drawImagePayload = new RendererDrawImagePayload(_incomingBuffer);
                     	
                 		//Console.WriteLine(DateTime.Now.ToString() + "  **** TouchClient processing DrawImage payload for bounds: X=" + drawImagePayload.Bounds.X + ", Y=" + drawImagePayload.Bounds.Y + ", Width=" + drawImagePayload.Bounds.Width + ", Height=" + drawImagePayload.Bounds.Height);
 
@@ -547,16 +532,6 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
 		sendMessage(hello, channel);
     }
-
-//	private byte[] concatenateByteArrays(byte[] b1, byte[] b2)
-//	{	
-//		byte[] data = new byte[b1.length + b2.length];
-//
-//        System.arraycopy(b1, 0, data, 0, b1.length);
-//        System.arraycopy(b2, 0, data, b1.length, b2.length);
-//
-//        return data;
-//	}
 	
 	private static byte[] concatenateByteArrays(byte[] b1, byte[] b2, byte[] b3)
 	{	

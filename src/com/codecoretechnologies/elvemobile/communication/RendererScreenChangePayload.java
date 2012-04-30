@@ -2,6 +2,8 @@ package com.codecoretechnologies.elvemobile.communication;
 
 import java.io.IOException;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+
 import android.graphics.Rect;
 
 
@@ -10,21 +12,26 @@ public class RendererScreenChangePayload implements IBinaryTcpPayload
 {
     public Rect Bounds;
 
-    public RendererScreenChangePayload(byte[] data) throws IOException
+    public RendererScreenChangePayload(ChannelBuffer buffer)
     {
-    	BinaryStreamReader sr = null;
-    	try
-    	{
-        	sr = new BinaryStreamReader(data);
-        	
-        	Bounds = sr.ReadRectangle();
-    	}
-    	finally
-    	{
-    		if (sr != null)
-    			sr.close();
-    	}
+    	Bounds = ChannelBufferIO.readRectangle(buffer);
     }
+    
+//    public RendererScreenChangePayload(byte[] data) throws IOException
+//    {
+//    	BinaryStreamReader sr = null;
+//    	try
+//    	{
+//        	sr = new BinaryStreamReader(data);
+//        	
+//        	Bounds = sr.ReadRectangle();
+//    	}
+//    	finally
+//    	{
+//    		if (sr != null)
+//    			sr.close();
+//    	}
+//    }
 
     public RendererScreenChangePayload(Rect rect)
     {

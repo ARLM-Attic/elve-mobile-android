@@ -55,7 +55,7 @@
   </Preference>
   
     <Preference
-    android:title="This is a Beta Version"
+    android:title="This is a Beta Version (3)"
     android:summary="This app is intented for testing purposes." />
    
 </PreferenceScreen>

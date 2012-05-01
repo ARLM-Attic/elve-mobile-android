@@ -3,7 +3,11 @@ package com.codecoretechnologies.elvemobile;
 import com.codecoretechnologies.elvemobile.communication.TouchEventType;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -25,7 +29,10 @@ public class ElveTouchScreenActivity extends Activity
 {
 	private ImageView _iv = null;
 	
-    /** Called when the activity is first created. */
+	private static final int NOTIFY_BACKGROUND_ID = 1;
+	
+
+	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -225,7 +232,12 @@ public class ElveTouchScreenActivity extends Activity
         Bitmap bm = CommunicationController.TouchScreenBitmap;
         if (bm != null)
         	UpdateImageView(bm);
-
+        
+        
+    	// Clear the Elve is running in the background notification (if it is still there).
+        cancelBackgroundNotification();  
+        
+        
     	super.onResume();
     }
 
@@ -258,7 +270,10 @@ public class ElveTouchScreenActivity extends Activity
 	    		CommunicationController.ReconnectOnAppEnteringForeground = true;
 	    	}
 	    	else
+	    	{
+	    		showBackgroundNotification();
 	    		CommunicationController.ReconnectOnAppEnteringForeground = false;
+	    	}
     	}
     	else
     		CommunicationController.ReconnectOnAppEnteringForeground = false;
@@ -327,5 +342,42 @@ public class ElveTouchScreenActivity extends Activity
 			});
     	}
     	Log.d("TS Activity", "Exited UpdateImageView()");
+    }
+    
+    
+    void showBackgroundNotification()
+    {
+    	//http://developer.android.com/guide/topics/ui/notifiers/notifications.html
+    	
+    	
+    	//Get a reference to the NotificationManager
+    	String ns = Context.NOTIFICATION_SERVICE;
+    	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+    	
+    	// Instantiate the Notification:
+    	int icon = R.drawable.icon;
+    	CharSequence tickerText = "Elve Mobile is running in the background.";
+    	long when = System.currentTimeMillis();
+
+    	Notification notification = new Notification(icon, tickerText, when);
+    	
+    	// Define the notification's message and PendingIntent:
+    	Context context = getApplicationContext();
+    	CharSequence contentTitle = "Elve Mobile";
+    	CharSequence contentText = "Elve Mobile is running in the background.";
+    	Intent notificationIntent = new Intent(this, ElveTouchScreenActivity.class);
+    	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+    	// Pass the Notification to the NotificationManager:
+    	notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
+    	mNotificationManager.notify(NOTIFY_BACKGROUND_ID, notification);
+    }
+    
+    void cancelBackgroundNotification()
+    {
+    	// Clear the Elve is running in the background notification (if it is still there).
+    	String ns = Context.NOTIFICATION_SERVICE;
+    	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
+    	mNotificationManager.cancel(NOTIFY_BACKGROUND_ID);
     }
 }

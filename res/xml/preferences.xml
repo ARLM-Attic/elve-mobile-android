@@ -50,14 +50,14 @@
     <CheckBoxPreference
         android:key="pref_keepScreenOn"
         android:title="Keep Screen On"
-        android:summary="Indicates if the app should keep the screen on when connected."
+        android:summary="Indicates if the app should keep the screen on while connected."
         android:defaultValue="true"
         />
 
     <CheckBoxPreference
         android:key="pref_runInBackground"
         android:title="Run in Background"
-        android:summary="Indicates if the app stays connected when running in the background."
+        android:summary="Indicates if the app stays connected while running in the background."
         android:defaultValue="true"
         />
 
@@ -74,7 +74,7 @@
   </Preference>
   
     <Preference
-    android:title="This is a Beta Version (5)"
+    android:title="This is a Beta Version (6)"
     android:summary="This app is intented for testing purposes." />
    
 </PreferenceScreen>

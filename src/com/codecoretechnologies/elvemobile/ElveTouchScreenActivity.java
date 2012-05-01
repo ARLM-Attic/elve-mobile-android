@@ -88,7 +88,9 @@ public class ElveTouchScreenActivity extends Activity
 	        }
 	        
 	        
-
+	        // Keep the screen on if desired.
+	        if (PrefsActivity.getKeepScreenOn(CommunicationController.ParentPrefsActivity) == true)
+	        	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 	
 	
 	

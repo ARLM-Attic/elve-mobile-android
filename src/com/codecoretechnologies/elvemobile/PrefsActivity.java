@@ -125,6 +125,11 @@ public class PrefsActivity extends PreferenceActivity {
         return prefs.getBoolean("pref_runInBackground", true);
     }
     
+    static public boolean getKeepScreenOn(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getBoolean("pref_keepScreenOn", true);
+    }
+    
     
     static public byte[] getHiddenSessionID(Context context) {
     	try

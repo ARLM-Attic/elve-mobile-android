@@ -246,7 +246,21 @@ public class ElveTouchScreenActivity extends Activity
     protected void onPause()
     {
     	Log.d("TS onPause", "Entered onPause()");
-    	
+
+    	// Determine if the user wants to close communications when the app goes into the background.
+    	if (isFinishing() == false)
+    	{
+	    	if (PrefsActivity.getRunInBackground(CommunicationController.ParentPrefsActivity) == false)
+	    	{
+	    		finish();
+	    		CommunicationController.ReconnectOnAppEnteringForeground = true;
+	    	}
+	    	else
+	    		CommunicationController.ReconnectOnAppEnteringForeground = false;
+    	}
+    	else
+    		CommunicationController.ReconnectOnAppEnteringForeground = false;
+
     	super.onPause();
     }
     

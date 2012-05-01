@@ -45,10 +45,28 @@ public class PrefsActivity extends PreferenceActivity {
             }
         });
         
-        
-        // If the preferences are already filled out then call connect().
         if (isComplete())
         	connect();
+    }
+
+
+    @Override
+    protected void onRestart()
+    {
+        // If the preferences are already filled out then call connect().
+    	if (CommunicationController.ReconnectOnAppEnteringForeground == true)
+    	{
+	    	runOnUiThread(new Runnable()
+			{
+				public void run()
+				{
+			        if (isComplete())
+			        	connect();
+				}
+			});
+    	}
+        
+        super.onRestart();
     }
         
     void connect()
@@ -101,6 +119,12 @@ public class PrefsActivity extends PreferenceActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getString("pref_password", "");
     }
+    
+    static public boolean getRunInBackground(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getBoolean("pref_runInBackground", true);
+    }
+    
     
     static public byte[] getHiddenSessionID(Context context) {
     	try

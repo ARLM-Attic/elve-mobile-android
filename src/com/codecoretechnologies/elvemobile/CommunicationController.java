@@ -38,12 +38,13 @@ import com.google.common.eventbus.Subscribe;
 
 public class CommunicationController
 {
-	// TODO: This currently uses a static conntroller pattern... which I don't normally ever do. Is there a better recommended design pattern for handling the activities, comm object, and event bus? 
+	// TODO: This currently uses a static controller pattern... which I don't normally ever do. Is there a better recommended design pattern for handling the activities, comm object, and event bus? 
 	public static PrefsActivity ParentPrefsActivity;
 	public static ProgressDialog ConnectionProgressDialog = null;
 	public static Bitmap TouchScreenBitmap = null;
 	public static ElveTouchScreenActivity TouchScreenActivity = null;
 	public static UptimeClient Comm = null;
+	public static boolean ReconnectOnAppEnteringForeground = false; // Indicates if the app was closed when the app went into the background and therefore it should reconnect when the app comes back to the foreground.
 	private static boolean _isClosing = false;
 	private static EventBus _eventbus = null;
 	private static temporaryEventHolder _eventHandler = null;

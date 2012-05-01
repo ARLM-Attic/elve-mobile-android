@@ -44,6 +44,18 @@
      
   </PreferenceCategory>
   
+  <PreferenceCategory
+     android:title="Behavior">
+    
+    <CheckBoxPreference
+        android:key="pref_runInBackground"
+        android:title="Run in Background"
+        android:summary="Indicates if the app stays connected when running in the background."
+        android:defaultValue="true"
+        />
+
+  </PreferenceCategory>
+  
   <Preference
     android:title="Help"
     android:summary="View online manual">
@@ -55,7 +67,7 @@
   </Preference>
   
     <Preference
-    android:title="This is a Beta Version (3)"
+    android:title="This is a Beta Version (4)"
     android:summary="This app is intented for testing purposes." />
    
 </PreferenceScreen>

@@ -63,6 +63,9 @@
 
   </PreferenceCategory>
   
+    <PreferenceCategory
+     android:title="Information">
+  
   <Preference
     android:title="Help"
     android:summary="View online manual">
@@ -76,5 +79,7 @@
     <Preference
     android:title="This is a Beta Version (6)"
     android:summary="This app is intented for testing purposes." />
+ 
+ </PreferenceCategory>
    
 </PreferenceScreen>

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -67,6 +68,27 @@ public class PrefsActivity extends PreferenceActivity {
     	}
         
         super.onRestart();
+    }
+    
+    @Override
+    protected void onPause()
+    {
+    	Log.d("Prefs", "onPause()");
+    	super.onPause();
+    }
+    
+    @Override
+    protected void onStop()
+    {
+    	Log.d("Prefs", "onStop()");
+    	super.onStop();
+    }
+    
+    @Override
+    protected void onDestroy()
+    {
+    	Log.d("Prefs", "onDestroy()");
+    	super.onDestroy();
     }
         
     void connect()

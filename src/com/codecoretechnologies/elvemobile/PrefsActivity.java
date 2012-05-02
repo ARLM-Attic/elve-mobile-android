@@ -45,30 +45,27 @@ public class PrefsActivity extends PreferenceActivity {
             	}
             }
         });
-        
-        if (isComplete())
-        	connect();
     }
 
 
-    @Override
-    protected void onRestart()
-    {
-        // If the preferences are already filled out then call connect().
-    	if (CommunicationController.ReconnectOnAppEnteringForeground == true)
-    	{
-	    	runOnUiThread(new Runnable()
-			{
-				public void run()
-				{
-			        if (isComplete())
-			        	connect();
-				}
-			});
-    	}
-        
-        super.onRestart();
-    }
+//    @Override
+//    protected void onRestart()
+//    {
+//        // If the preferences are already filled out then call connect().
+//    	if (CommunicationController.ReconnectOnAppEnteringForeground == true)
+//    	{
+//	    	runOnUiThread(new Runnable()
+//			{
+//				public void run()
+//				{
+//			        if (isComplete())
+//			        	connect();
+//				}
+//			});
+//    	}
+//        
+//        super.onRestart();
+//    }
     
     @Override
     protected void onPause()
@@ -93,21 +90,21 @@ public class PrefsActivity extends PreferenceActivity {
         
     void connect()
     {
-    	try
-    	{
-    		CommunicationController.Start(this);
-    	}
-    	catch (Exception ex)
-    	{
-    		int i =1;
-    	}
+        Intent intent = new Intent(this, ElveTouchScreenActivity.class);
+		startActivity( intent );
+		finish(); 
     }
 
     boolean isComplete()
     {
-    	if (getServerAddress(this) != ""
-    			&& getServerPort(this) != 0
-    			&& getUsername(this) != "")
+    	return isComplete(this);
+    }
+
+    static public boolean isComplete(Context context)
+    {
+    	if (getServerAddress(context) != ""
+    			&& getServerPort(context) != 0
+    			&& getUsername(context) != "")
     		return true;
     	
     	return false;

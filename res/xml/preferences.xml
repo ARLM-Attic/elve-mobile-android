@@ -77,7 +77,7 @@
   </Preference>
   
     <Preference
-    android:title="This is a Beta Version (6)"
+    android:title="This is a Beta Version (7)"
     android:summary="This app is intented for testing purposes." />
  
  </PreferenceCategory>

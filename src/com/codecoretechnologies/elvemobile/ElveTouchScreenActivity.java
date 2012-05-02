@@ -368,7 +368,7 @@ public class ElveTouchScreenActivity extends Activity
     	Intent notificationIntent = new Intent(this, ElveTouchScreenActivity.class);
     	notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);  // If set, the activity will not be launched if it is already running at the top of the history stack.
     	//notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // this should be unnecessary since the only think on top of the TS activity would be a dialog.  If set, and the activity being launched is already running in the current task, then instead of launching a new instance of that activity, all of the other activities on top of it will be closed and this Intent will be delivered to the (now on top) old activity as a new Intent.
-    	
+    	notification.flags |= Notification.FLAG_NO_CLEAR; // prevent clearing of the flag
     	
     	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 

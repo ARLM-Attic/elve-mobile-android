@@ -2,6 +2,21 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="Preferences">
 
+  <Preference
+    android:title="Welcome to Elve Mobile"
+    android:summary="Ensure the Elve Touch Service is installed on a computer to establish a connection."
+    android:selectable="false" />
+    
+      
+  <PreferenceCategory
+     android:title="Beta">
+       <Preference
+    android:title="This is a Beta Version (13)"
+    android:summary="This app is intented for testing purposes and may not be fully operational."
+    android:icon="@drawable/ic_launcher_logo"
+    android:selectable="false" />
+  </PreferenceCategory>
+        
   <PreferenceCategory
      android:title="Elve Touch Server">
     
@@ -45,6 +60,19 @@
   </PreferenceCategory>
   
   <PreferenceCategory
+     android:title="Performance">
+    
+      <ListPreference
+          android:title="Image Quality"
+          android:summary="Higher quality reduces speed and increases memory use."
+          android:key="pref_imageQuality"
+          android:defaultValue="PNG"
+          android:entries="@array/imageQualityTexts"
+          android:entryValues="@array/imageQualityValues" />
+    
+  </PreferenceCategory>
+  
+  <PreferenceCategory
      android:title="Behavior">
     
     <CheckBoxPreference
@@ -63,7 +91,8 @@
 
   </PreferenceCategory>
   
-    <PreferenceCategory
+       
+  <PreferenceCategory
      android:title="Information">
   
   <Preference
@@ -76,10 +105,6 @@
 
   </Preference>
   
-    <Preference
-    android:title="This is a Beta Version (8)"
-    android:summary="This app is intented for testing purposes." />
- 
  </PreferenceCategory>
    
 </PreferenceScreen>

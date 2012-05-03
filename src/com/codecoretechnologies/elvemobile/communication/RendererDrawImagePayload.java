@@ -7,13 +7,14 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.util.Log;
 
 public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
 {
     public Rect Bounds;
     public int Opacity; // 0-255
     public ImageSizeMode SizeMode;
-    public Bitmap Image;
+    public Bitmap Image; // null if the image could not be processed or it has been disposed.
 
     public RendererDrawImagePayload(ChannelBuffer buffer) throws IOException
     {
@@ -21,6 +22,9 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
         Opacity = buffer.readUnsignedByte();
         SizeMode = ImageSizeMode.getFromValue(buffer.readByte());
         Image = ChannelBufferIO.readImage(buffer);
+        
+        if (Image == null) // failed to process the image data
+        	Log.d("RendererDrawImagePayload", "Failed to process image data for size: " + Bounds.width() + "x" + Bounds.height());
     }
 
 //    public RendererDrawImagePayload(byte[] data) throws IOException
@@ -80,6 +84,11 @@ public class RendererDrawImagePayload implements IBinaryTcpPayload, Closeable
 
 	public void close()
 	{
-		Image = null;
+		if (Image != null)
+		{
+			if (Image.isRecycled() == false)
+				Image.recycle(); // release any memory used by the bitmap right now.
+			Image = null;
+		}
 	}
 }

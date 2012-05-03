@@ -17,7 +17,8 @@ public class HelloPayload implements IBinaryTcpPayload
     public int PixelDepthByteCount; // usually 24 or 32.
     public boolean SupportsAlphaChannel;
     public String UniqueClientID; // The unique identifier of the device.  iphone should use UIDevice.UniqueIdentifier. This is used to help limit the # of touch screens.
-
+    public byte ImageFormat; // 0=png, 1=jpeg
+    public byte JpegImageQuality; // 0 to 100 for jpeg only
 
     public HelloPayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
@@ -60,7 +61,7 @@ public class HelloPayload implements IBinaryTcpPayload
 //    	}
 //    }
 
-    public HelloPayload(byte protocolVersion, byte applicationID, RenderingMode renderingMode, Point screenSize, int pixelDepthByteCount, boolean supportsAlphaChannel, String uniqueClientID)
+    public HelloPayload(byte protocolVersion, byte applicationID, RenderingMode renderingMode, Point screenSize, int pixelDepthByteCount, boolean supportsAlphaChannel, String uniqueClientID, byte imageFormat, byte jpegImageQuality)
     {
         ProtocolVersion = protocolVersion;
         ApplicationID = applicationID;
@@ -69,6 +70,8 @@ public class HelloPayload implements IBinaryTcpPayload
         PixelDepthByteCount = pixelDepthByteCount;
         SupportsAlphaChannel = supportsAlphaChannel;
         UniqueClientID = uniqueClientID;
+        ImageFormat = imageFormat;
+        JpegImageQuality = jpegImageQuality;
     }
 
     public TouchServiceTcpCommunicationPayloadTypes PayloadType()
@@ -89,6 +92,8 @@ public class HelloPayload implements IBinaryTcpPayload
             sw.Write((byte)PixelDepthByteCount);
             sw.Write(SupportsAlphaChannel);
             sw.Write(UniqueClientID);
+            sw.Write(ImageFormat);
+            sw.Write(JpegImageQuality);
 
             return sw.ToArray();
         }

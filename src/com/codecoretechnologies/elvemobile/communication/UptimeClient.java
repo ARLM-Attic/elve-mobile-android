@@ -42,6 +42,8 @@ public class UptimeClient implements Closeable
     private EventBus _eventBus;
     private String _username;
     private String _password;
+    private byte _imageFormat;
+    private byte _jpegImageQuality;
     private byte[] _sessionID;
     private Point _screenSize;
     private String _deviceID;
@@ -51,11 +53,13 @@ public class UptimeClient implements Closeable
     private Timer _idleTimer;
     private UptimeClientHandler _uptimeHandler;
 
-    public UptimeClient(String host, int port, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
+    public UptimeClient(String host, int port, String username, String password, byte imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._host = host;
         this._port = port;
         this._username = username;
         this._password = password;
+        this._imageFormat = imageFormat;
+        this._jpegImageQuality = jpegImageQuality;
         this._sessionID = sessionID;
         this._deviceID = deviceID;
         this._screenSize = screenSize;
@@ -73,7 +77,7 @@ public class UptimeClient implements Closeable
                 Executors.newCachedThreadPool());
         _bootstrap = new ClientBootstrap(channelFactory);
 
-        _uptimeHandler = new UptimeClientHandler(_bootstrap, _username, _password, _sessionID, _deviceID, _screenSize, _eventBus);
+        _uptimeHandler = new UptimeClientHandler(_bootstrap, _username, _password, _imageFormat, _jpegImageQuality, _sessionID, _deviceID, _screenSize, _eventBus);
         
         // Configure the pipeline factory.
         _bootstrap.setPipelineFactory(new ChannelPipelineFactory()

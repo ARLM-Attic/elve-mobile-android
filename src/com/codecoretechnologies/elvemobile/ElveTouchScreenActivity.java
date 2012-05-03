@@ -1,6 +1,6 @@
 package com.codecoretechnologies.elvemobile;
 
-
+import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedTooLargeErrorEventArgs;
 import com.codecoretechnologies.elvemobile.communication.ContinueSessionResultReceivedEventArgs;
 import com.codecoretechnologies.elvemobile.communication.ContinueSessionResults;
 import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedEventArgs;
@@ -31,6 +31,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -43,6 +45,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 
 
 public class ElveTouchScreenActivity extends Activity
@@ -54,8 +57,11 @@ public class ElveTouchScreenActivity extends Activity
 	private UptimeClient _comm = null;
 	private ProgressDialog _connectionProgressDialog = null;
 	private EventBus _eventbus = null;
-	private temporaryEventHolder _eventHandler = null;
-	public  Bitmap _bitmap = null;
+	private CommEventHandlers _eventHandler = null;
+	private Bitmap _bitmap = null;
+	private boolean _isImageViewBitmapSet = false;
+	private boolean _destroyed = false;
+	private boolean _interfaceTooLargeAlertIsShown = false;
 
 	/** Called when the activity is first created. */
     @Override
@@ -65,9 +71,14 @@ public class ElveTouchScreenActivity extends Activity
         setContentView(R.layout.elvetouchscreen);
 
         Log.d("TS Activity", "Entered onCreate()");
+
         
+        _iv = (ImageView) findViewById(R.id.ivElveTouchScreenInterface);
+        _iv.setScaleType(ScaleType.FIT_XY); // Show the splash screen by scaling the image to fill the screen. We will then reset it to fill proportionally when the 1st image is downloaded.
+        _iv.setImageResource(R.drawable.splash_screen);
+    	//_iv.invalidate(); I don't seem to need this
         
-     // Show connection progress dialog
+        // Show connection progress dialog
     	showProgressDialogMessage("Initializing...");
 		
         // TODO: Hide the Android status bar.
@@ -83,7 +94,6 @@ public class ElveTouchScreenActivity extends Activity
         	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         
 		
-        _iv = (ImageView) findViewById(R.id.ivElveTouchScreenInterface);
 
         
         
@@ -104,12 +114,12 @@ public class ElveTouchScreenActivity extends Activity
         // Create the event bus. 
         _eventbus = new EventBus();
         // Register the communications object with the event bus (the communications object will trigger events).
-        _eventHandler =  new temporaryEventHolder();
+        _eventHandler =  new CommEventHandlers();
         _eventbus.register(_eventHandler);        
 
         
         // Create the communications object.
-        _comm = new UptimeClient(PrefsActivity.getServerAddress(this), PrefsActivity.getServerPort(this), PrefsActivity.getUsername(this), PrefsActivity.getPassword(this), sessionID, deviceID, screenSize, _eventbus);
+        _comm = new UptimeClient(PrefsActivity.getServerAddress(this), PrefsActivity.getServerPort(this), PrefsActivity.getUsername(this), PrefsActivity.getPassword(this), PrefsActivity.getImageFormat(this), PrefsActivity.getJpegImageQuality(this), sessionID, deviceID, screenSize, _eventbus);
         // Start trying to connect to server and handle protocol.
         _comm.run();
 
@@ -225,9 +235,8 @@ public class ElveTouchScreenActivity extends Activity
 				return true;
 			}
 		});
-
     }
-    
+
     @Override
     public void onConfigurationChanged(Configuration newConfig)
     {
@@ -236,7 +245,7 @@ public class ElveTouchScreenActivity extends Activity
     	
     	super.onConfigurationChanged(newConfig);
     }
-    
+
     @Override
     protected void onStart()
     {
@@ -267,7 +276,6 @@ public class ElveTouchScreenActivity extends Activity
         switch (keyCode)
         {
         	case KeyEvent.KEYCODE_MENU:
-        	//case KeyEvent.KEYCODE_BACK:
         		 
     			Log.d("TS onKeyDown", "MENU button presses, Calling CommunicationController.Close()");
     	        
@@ -276,7 +284,7 @@ public class ElveTouchScreenActivity extends Activity
         		return true;
         }
         
-        return super.onKeyDown(keyCode, event);
+        return super.onKeyDown(keyCode, event); // this will cause BACK to be properly handled.
     }
     
     @Override
@@ -307,6 +315,8 @@ public class ElveTouchScreenActivity extends Activity
     @Override
     protected void onDestroy()
     {
+    	_destroyed = true;
+    	
     	Log.d("TS onDestroy", "Entered onDestroy()");
     	 
     	
@@ -352,7 +362,7 @@ public class ElveTouchScreenActivity extends Activity
     	}
     	catch (Exception ex)
     	{
-    		ex.printStackTrace();
+    		Log.e("TS Activity", "ERROR in onDestroy()", ex);
     	}
 
     	
@@ -363,7 +373,8 @@ public class ElveTouchScreenActivity extends Activity
     public void updateImageView()
     {
     	Log.d("TS Activity", "Entered UpdateImageView()");
-    	if (_iv == null)
+    	final ImageView iv = _iv;
+    	if (iv == null)
     		Log.d("TS Activity", "_iv IS NULL in UpdateImageView()");
     	
     	final Bitmap bm = _bitmap;
@@ -376,29 +387,33 @@ public class ElveTouchScreenActivity extends Activity
 			    	try
 			    	{
 			    		Log.d("TS Activity", "Entered UpdateImageView().Runnable()");
-			    		// NOTE: The android Bitmap docs indicates that you do not need to call bitmap.recycle() on the old imageview bitmap.
-			    		// The bitmap.recycle() method ... "need not be called, since the normal GC process will free up this memory when there are no more references to this bitmap."
-			    		// doesn't work -> HOWEVER I call it anyway since the images can be replaced rapidly and I don't know how fast the android garbage collector will free the bitmap memory.
 			    		 
-			    		//Drawable drawable = _imageView.getDrawable();
 			    		
 			    		Log.d("TS Activity", "Updating imageview with new bitmap.");
 			    		
-			    		// Set new bitmap in imageview.
-				        _iv.setImageBitmap(bm);
-				    	_iv.invalidate();
+			    			
+			    		// Set new bitmap in imageview to our persistant bitmap.
+			    		if (_isImageViewBitmapSet == false)
+			    		{
+			    			_isImageViewBitmapSet = true;
+			    			iv.setImageBitmap(bm);
+			    		}
+			    		
+			    		// Tell the ImageView to redraw since the bitmap content changed.
+				    	iv.invalidate();
 				    	
-				    	// This causes an EXCEPTION when the 2nd image is added so I commented it out. 
-	//			    	// Dispose of the old bitmap.
-	//			    	if (drawable instanceof BitmapDrawable) {
-	//			    	    BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-	//			    	    Bitmap bitmap = bitmapDrawable.getBitmap();
-	//			    	    bitmap.recycle();
-	//			    	}
+				    	
+				    	// DO NOT RECYCLE THE BITMAP! We are only using 1 bitmap and drawing onto it so don't recycle it.
+				    	// Dispose of the old bitmap.
+				    	//if (drawable instanceof BitmapDrawable) {
+				    	//    BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+				    	//    Bitmap bitmap = bitmapDrawable.getBitmap();
+				    	//    bitmap.recycle();
+				    	//}
 				    }
 			    	catch (Exception ex)
 			    	{
-			    		ex.printStackTrace();
+			    		Log.e("TS Activity", "ERROR in updateImageView() anonymous class", ex);
 			    	}
 			    	Log.d("TS Activity", "Exited UpdateImageView().Runnable()");
 			    }
@@ -418,7 +433,7 @@ public class ElveTouchScreenActivity extends Activity
     	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
     	
     	// Instantiate the Notification:
-    	int icon = R.drawable.icon;
+    	int icon = R.drawable.ic_dialog_logo;
     	CharSequence tickerText = "Elve Mobile is running in the background.";
     	long when = System.currentTimeMillis();
 
@@ -478,6 +493,7 @@ public class ElveTouchScreenActivity extends Activity
 					{
 						public void onCancel(DialogInterface dialog)
 						{
+							//It crashed when I pressed the back button when logging on
 							showPrefsActivity();
 						}
 					});
@@ -489,7 +505,7 @@ public class ElveTouchScreenActivity extends Activity
 		});
 	}
 	
-    void showAlert(final String message)
+    void showAlertThenPrefs(final String message)
     {
     	runOnUiThread(new Runnable()
 		{
@@ -502,7 +518,49 @@ public class ElveTouchScreenActivity extends Activity
         	      public void onClick(DialogInterface dialog, int which) {  
         	    	  showPrefsActivity();
         	    } });
-        	    alertDialog.setIcon(R.drawable.icon);
+        	    alertDialog.setIcon(R.drawable.ic_dialog_logo);
+        	    alertDialog.show();
+			}
+		});
+    }
+    
+    void showInterfaceTooLargeAlert()
+    {
+    	if (_interfaceTooLargeAlertIsShown)
+    		return;
+    	
+    	_interfaceTooLargeAlertIsShown = true;
+    			
+    	runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+        		AlertDialog alertDialog = new AlertDialog.Builder(ElveTouchScreenActivity.this).create();  
+        	    alertDialog.setTitle("Elve Mobile");  
+        	    alertDialog.setMessage("There is not enough memory available for Elve Mobile to accurately handle the received interface. It is recommended that a smaller Elve touch screen interface be used for this android device.");  
+        	    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {  
+        	      public void onClick(DialogInterface dialog, int which) {  
+        	    	  _interfaceTooLargeAlertIsShown = false;
+        	    } });
+        	    alertDialog.setButton2("Settings", new DialogInterface.OnClickListener() {  
+          	      public void onClick(DialogInterface dialog, int which) {  
+          	    	  showPrefsActivity();
+          	    } });
+        	    alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener()
+				{
+					public void onDismiss(DialogInterface dialog)
+					{
+						_interfaceTooLargeAlertIsShown = false;
+					}
+				});
+        	    alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener()
+				{
+					public void onCancel(DialogInterface dialog)
+					{
+						_interfaceTooLargeAlertIsShown = false;
+					}
+				});
+        	    alertDialog.setIcon(R.drawable.ic_dialog_logo);
         	    alertDialog.show();
 			}
 		});
@@ -555,7 +613,7 @@ public class ElveTouchScreenActivity extends Activity
 	
 	
 	
-	 class temporaryEventHolder // TODO: move the events somewhere that makes sense.
+	 class CommEventHandlers
 	 {
 		private boolean _hasReceivedFirstImage = false;
 
@@ -564,7 +622,7 @@ public class ElveTouchScreenActivity extends Activity
 	    public void handleTouchTcpClientUnresolvedAddressExceptionEventArgs(TouchTcpClientUnresolvedAddressExceptionEventArgs eventArgs)
 	    {
 			// Show the message in a closable alert.
-           showAlert("The server address setting is invalid.");
+           showAlertThenPrefs("The server address setting is invalid.");
 	    }
 
 	    @Subscribe
@@ -594,11 +652,13 @@ public class ElveTouchScreenActivity extends Activity
 	                text = "Retrieving Interface...";
 	                break;
 	            case FailedAuthentication:
-	                //text = "Unsuccessful Authentication."; 
-	                //break;
-	            	return; // the handleTouchTcpAuthenticationResultReceivedEventArgs() event will handle this situation.
+	            	// The handleTouchTcpAuthenticationResultReceivedEventArgs() event will handle this situation,
+	            	// so do not do anything here... just return!
+	                ////text = "Unsuccessful Authentication."; 
+	                ////break;
+	            	return;
 	        }
-	
+
 	    	showProgressDialogMessage(text);
 	    }
 	
@@ -628,7 +688,7 @@ public class ElveTouchScreenActivity extends Activity
 	            _connectionProgressDialog.dismiss();
 	            
 	            // Show the message in a closable alert.
-	            showAlert(message);
+	            showAlertThenPrefs(message);
 
 	            return;
 	        }
@@ -643,10 +703,19 @@ public class ElveTouchScreenActivity extends Activity
 	    }
 
 
+	    @Subscribe
+	    public void DrawImageReceivedTooLargeErrorEventArgs(DrawImageReceivedTooLargeErrorEventArgs eventArgs)
+	    {
+	    	showInterfaceTooLargeAlert();
+	    }
 	
 	    @Subscribe
 	    public void handleDrawImageReceivedEventArgs(DrawImageReceivedEventArgs eventArgs)
 	    {
+	    	// Make sure onDestroy() has not been called yet (can happen asynchronously when pressing back when the progress dialog is shown).
+	    	if (_destroyed)
+	    		return;
+	    	
 	    	Log.d("handleDrawImageReceivedEventArgs", "Entered handleDrawImageReceivedEventArgs()");
 	    	try
 	    	{
@@ -658,7 +727,8 @@ public class ElveTouchScreenActivity extends Activity
 		
 		    	// FUTURE TODO: eventArgs.SizeMode will always be Normal in Snapshot mode, but if granular command mode support is added then we need to support it!
 		    	
-		    	// Draw the snapshot.
+		    	
+		    	// Draw the received image onto our persistant bitmap.
 		    	Canvas canvas = new Canvas(_bitmap);
 		    	Paint paint = new Paint();
 		    	if (eventArgs.Bounds.width() != eventArgs.Image.getWidth() || eventArgs.Bounds.height() != eventArgs.Image.getHeight())
@@ -686,17 +756,24 @@ public class ElveTouchScreenActivity extends Activity
 		    			{
 		    				Log.d("handleDrawImageReceivedEventArgs", "Entered handleDrawImageReceivedEventArgs().Runnable()");
 				    		// Close the progress dialog.
-			    			_connectionProgressDialog.dismiss();
+		    				final ProgressDialog dialog = _connectionProgressDialog;
+		    				if (dialog != null) // should never be null
+		    					dialog.dismiss();
 				    	
-			    			
+		    				
+		    				// Change the imageview's scale to fill the screen proportionally and center.
+			    			_iv.setImageDrawable(null); // Clear the image view so that we don't see the current image resize in the next line.
+		    				_iv.setScaleType(ScaleType.FIT_CENTER); // Fill the screen proportionally when the 1st image is downloaded.
+		    				
 			    			
 			    			
 			    			
 			    			// Set the screen orientation. This activity is configured (via AndroidManifest.xml) to handle orientation changes so that the activity isn't automatically restarted causing onDestroy() to close the connection.
-			    	        if (_bitmap != null)
+		    				final Bitmap bm = _bitmap; 
+			    	        if (bm != null)
 			    	        {
-			    	        	int bmWidth = _bitmap.getWidth();
-			    	        	int bmHeight = _bitmap.getHeight();
+			    	        	int bmWidth = bm.getWidth();
+			    	        	int bmHeight = bm.getHeight();
 			    	        	
 			    		        // Get the imageview's activity.
 			    				//Activity activity = (Activity)(ElveTouchScreenActivity.badStaticImageViewForTesting.getContext());

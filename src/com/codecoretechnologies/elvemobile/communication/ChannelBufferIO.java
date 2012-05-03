@@ -12,6 +12,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.util.Log;
 
 public class ChannelBufferIO
 {
@@ -139,17 +140,35 @@ public class ChannelBufferIO
         	//o.inSampleSize = 2;
         	//Bitmap image = BitmapFactory.decodeByteArray(b, 0, b.length, o);
 
-        	Bitmap image = BitmapFactory.decodeByteArray(b, 0, b.length);
+        	Bitmap image;
+        	try
+        	{
+        		image = BitmapFactory.decodeByteArray(b, 0, b.length);
+        		if (image == null)
+        		{
+        			Log.d("READIMAGE", "ERROR: The received image data was too large to be loaded into a Bitmap object. Bytes received: " + b.length);
+        		}
+        	}
+        	catch (OutOfMemoryError ex)
+        	{
+        		Log.w("READIMAGE", "ERROR: The received image data was too large to be loaded into a Bitmap object. Bytes received: " + b.length, ex);
+        		
+        		return null; // return null to indicate that the image data could not be processed.
+        	}
         	return image;
         }
-//        catch (OutOfMemoryError ex)
-//        {
-//        	Log.e("READIMAGE", "ERROR occured in ReadImage().", ex);
-//        }
         finally
         {
         	if (in != null)
+        	{
         		in.close();
+        		in = null;
+        	}
+        	
+        	b = null;
+        	
+        	// Force garbage collection to release the array. 
+        	System.gc(); // TODO: calling the gc is usually discouraged and may cause a noticable ui pause, need to verify this. 
         }
     }
 

@@ -48,6 +48,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     private long _startTime = -1;
     private final String _username;
     private final String _password;
+    private byte _imageFormat;
+    private byte _jpegImageQuality;
     private byte[] _sessionID;
     private final Point _screenSize;
     private final String _deviceID;
@@ -66,10 +68,12 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     // Sleep 5 seconds before a reconnection attempt.
     static final int RECONNECT_DELAY = 5;
 
-    public UptimeClientHandler(ClientBootstrap bootstrap, String username, String password, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
+    public UptimeClientHandler(ClientBootstrap bootstrap, String username, String password, byte imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._bootstrap = bootstrap;
         this._username = username;
         this._password = password;
+        this._imageFormat = imageFormat;
+        this._jpegImageQuality = jpegImageQuality;
         this._sessionID = sessionID;
         this._deviceID = deviceID;
         this._screenSize = screenSize;
@@ -503,17 +507,22 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 	RendererDrawImagePayload drawImagePayload = null;
                 	try
                 	{
-                		//drawImagePayload = new RendererDrawImagePayload(payload);
                 		drawImagePayload = new RendererDrawImagePayload(_incomingBuffer);
                     	
                 		//Console.WriteLine(DateTime.Now.ToString() + "  **** TouchClient processing DrawImage payload for bounds: X=" + drawImagePayload.Bounds.X + ", Y=" + drawImagePayload.Bounds.Y + ", Width=" + drawImagePayload.Bounds.Width + ", Height=" + drawImagePayload.Bounds.Height);
 
-                    	_eventBus.post(new DrawImageReceivedEventArgs(drawImagePayload.Bounds, drawImagePayload.Opacity, drawImagePayload.SizeMode, drawImagePayload.Image));
+                		if (drawImagePayload.Image == null) // Image will be null if it could not be processed (for example due to memory limitations).
+                			_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs());
+                		else
+                			_eventBus.post(new DrawImageReceivedEventArgs(drawImagePayload.Bounds, drawImagePayload.Opacity, drawImagePayload.SizeMode, drawImagePayload.Image));
                 	}
                 	finally
                 	{
                 		if (drawImagePayload != null)
+                		{
                 			drawImagePayload.close();
+                			drawImagePayload = null;
+                		}
                 	}
                     break;
 			}
@@ -528,7 +537,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     
     private void sendHello(Channel channel) throws IOException
     {
-		HelloPayload hello = new HelloPayload((byte)1, (byte)4, RenderingMode.Snapshots, _screenSize, 4, true, _deviceID);
+		HelloPayload hello = new HelloPayload((byte)1, (byte)4, RenderingMode.Snapshots, _screenSize, 4, true, _deviceID, _imageFormat, _jpegImageQuality);
 
 		sendMessage(hello, channel);
     }

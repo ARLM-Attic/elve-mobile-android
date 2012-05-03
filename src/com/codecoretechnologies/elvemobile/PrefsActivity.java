@@ -6,7 +6,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Base64;
@@ -14,16 +16,33 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-public class PrefsActivity extends PreferenceActivity {
+public class PrefsActivity extends PreferenceActivity
+{
+	private OnSharedPreferenceChangeListener _prefListener;
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
-        setContentView(R.layout.prefs);
+        setContentView(R.layout.prefs); 
         
+        // Whenever a preference change occurs, clear the session id!
+        // The listenter must be a module level variable or it will be garbage collected. See: http://stackoverflow.com/questions/2542938/sharedpreferences-onsharedpreferencechangelistener-not-being-called-consistently/3104265#3104265
+        _prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+
+			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
+			{
+				// Prevent recursions since setting the sessionid calls this method again.
+				if (key.equals("pref_hidden_sessionid") == false)
+					PrefsActivity.setHiddenSessionID(PrefsActivity.this, null);
+			}
+        };
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(_prefListener);
         
+
         // Handle Connect button click.
         final Button button = (Button) findViewById(R.id.btnConnect);
         button.setOnClickListener(new View.OnClickListener() {
@@ -40,7 +59,7 @@ public class PrefsActivity extends PreferenceActivity {
             	      public void onClick(DialogInterface dialog, int which) {  
             	        return;  
             	    } });
-            	    alertDialog.setIcon(R.drawable.icon);
+            	    alertDialog.setIcon(R.drawable.ic_dialog_logo);
             	    alertDialog.show();
             	}
             }
@@ -134,7 +153,7 @@ public class PrefsActivity extends PreferenceActivity {
         return prefs.getString("pref_username", "");
     }
 
-    static public String getPassword(Context context) {
+	static public String getPassword(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getString("pref_password", "");
     }
@@ -147,6 +166,24 @@ public class PrefsActivity extends PreferenceActivity {
     static public boolean getKeepScreenOn(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getBoolean("pref_keepScreenOn", true);
+    }
+    
+    static public byte getImageFormat(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String s = prefs.getString("pref_imageQuality", "PNG");
+        if (s.equals("PNG"))
+        	return 0; // 0=png
+        else
+        	return 1; // 1=jpeg
+    }
+    
+    static public byte getJpegImageQuality(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String s = prefs.getString("pref_imageQuality", "PNG");
+        if (s.equals("PNG"))
+        	return 70; // default to 70 for jpeg, even though we are using png.
+        else
+        	return Byte.parseByte(s);
     }
     
     

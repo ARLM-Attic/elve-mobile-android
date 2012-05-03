@@ -464,8 +464,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
                     	_eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, null, null));
                     }
-
                     break;
+                    
                 case ShowMessage:
                 	RendererShowMessagePayload showMsg = new RendererShowMessagePayload(_incomingBuffer);
                 	
@@ -505,8 +505,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 						}
 					}
                 	break;
-                    
-                    
+
                 case DrawImage:
              
                 	RendererDrawImagePayload drawImagePayload = null;

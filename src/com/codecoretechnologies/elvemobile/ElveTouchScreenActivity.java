@@ -55,7 +55,7 @@ public class ElveTouchScreenActivity extends Activity
 	private ImageView _iv = null;
 	
 	private static final int NOTIFY_BACKGROUND_ID = 1;
-	private static final int NOTIFY_SHOWMESSAGE_ID = 2; 
+	private static final int NOTIFY_SHOWMESSAGE_ID_BASE = 10000; 
 	
 	private UptimeClient _comm = null;
 	private ProgressDialog _connectionProgressDialog = null;
@@ -450,7 +450,7 @@ public class ElveTouchScreenActivity extends Activity
     	Intent notificationIntent = new Intent(this, ElveTouchScreenActivity.class);
     	notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);  // If set, the activity will not be launched if it is already running at the top of the history stack.
     	//notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // this should be unnecessary since the only think on top of the TS activity would be a dialog.  If set, and the activity being launched is already running in the current task, then instead of launching a new instance of that activity, all of the other activities on top of it will be closed and this Intent will be delivered to the (now on top) old activity as a new Intent.
-    	if (mayClear)
+    	if (mayClear == false)
     		notification.flags |= Notification.FLAG_NO_CLEAR; // prevent clearing of the flag
     	
     	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -573,11 +573,6 @@ public class ElveTouchScreenActivity extends Activity
     
     void showAlert(final String title, final String message)
     {
-    	if (_interfaceTooLargeAlertIsShown)
-    		return;
-    	
-    	_interfaceTooLargeAlertIsShown = true;
-    			
     	runOnUiThread(new Runnable()
 		{
 			public void run()
@@ -731,12 +726,14 @@ public class ElveTouchScreenActivity extends Activity
 	    	}
 	    }
 
+	    private int _currentShowMessageID = NOTIFY_SHOWMESSAGE_ID_BASE;
 	    @Subscribe
 	    public void handleRendererShowMessageEventArgs(RendererShowMessageEventArgs eventArgs)
 	    {
 	    	if (eventArgs.DisplayMode == ShowMessageDisplayMode.NonIntrusive)
 	    	{
-	    		showNotification(eventArgs.Message, eventArgs.Title, eventArgs.Message, NOTIFY_SHOWMESSAGE_ID, true);
+	    		showNotification(eventArgs.Message, eventArgs.Title, eventArgs.Message, _currentShowMessageID, true);
+	    		_currentShowMessageID++; // increment the id so that we get a new notification each time.
 	    	}
 	    	else
 	    	{

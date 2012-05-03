@@ -4,6 +4,8 @@ import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedTooLar
 import com.codecoretechnologies.elvemobile.communication.ContinueSessionResultReceivedEventArgs;
 import com.codecoretechnologies.elvemobile.communication.ContinueSessionResults;
 import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedEventArgs;
+import com.codecoretechnologies.elvemobile.communication.RendererShowMessageEventArgs;
+import com.codecoretechnologies.elvemobile.communication.ShowMessageDisplayMode;
 import com.codecoretechnologies.elvemobile.communication.TouchEventType;
 import com.codecoretechnologies.elvemobile.communication.TouchServiceTcpCommunicationAuthenticationResults;
 import com.codecoretechnologies.elvemobile.communication.TouchTcpAuthenticationResultReceivedEventArgs;
@@ -53,6 +55,7 @@ public class ElveTouchScreenActivity extends Activity
 	private ImageView _iv = null;
 	
 	private static final int NOTIFY_BACKGROUND_ID = 1;
+	private static final int NOTIFY_SHOWMESSAGE_ID = 2; 
 	
 	private UptimeClient _comm = null;
 	private ProgressDialog _connectionProgressDialog = null;
@@ -265,7 +268,7 @@ public class ElveTouchScreenActivity extends Activity
         
         
     	// Clear the Elve is running in the background notification (if it is still there).
-        cancelBackgroundNotification();  
+        cancelNotification(NOTIFY_BACKGROUND_ID);  
         
     	super.onResume();
     }
@@ -298,7 +301,7 @@ public class ElveTouchScreenActivity extends Activity
 	    	if (PrefsActivity.getRunInBackground(this) == false)
 	    		finish();
 	    	else
-	    		showBackgroundNotification();
+	    		showNotification("Elve Mobile is running in the background.", "Elve Mobile", "Elve Mobile is running in the background.", NOTIFY_BACKGROUND_ID, false);
     	}
 
     	super.onPause();
@@ -423,7 +426,9 @@ public class ElveTouchScreenActivity extends Activity
     }
     
     
-    void showBackgroundNotification()
+
+    
+    void showNotification(CharSequence tickerText, CharSequence title, CharSequence message, int id, boolean mayClear)
     {
     	//http://developer.android.com/guide/topics/ui/notifiers/notifications.html
     	
@@ -434,33 +439,33 @@ public class ElveTouchScreenActivity extends Activity
     	
     	// Instantiate the Notification:
     	int icon = R.drawable.ic_dialog_logo;
-    	CharSequence tickerText = "Elve Mobile is running in the background.";
     	long when = System.currentTimeMillis();
 
     	Notification notification = new Notification(icon, tickerText, when);
     	
     	// Define the notification's message and PendingIntent:
     	Context context = getApplicationContext();
-    	CharSequence contentTitle = "Elve Mobile";
-    	CharSequence contentText = "Elve Mobile is running in the background.";
+    	CharSequence contentTitle = title;
+    	CharSequence contentText = message;
     	Intent notificationIntent = new Intent(this, ElveTouchScreenActivity.class);
     	notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);  // If set, the activity will not be launched if it is already running at the top of the history stack.
     	//notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // this should be unnecessary since the only think on top of the TS activity would be a dialog.  If set, and the activity being launched is already running in the current task, then instead of launching a new instance of that activity, all of the other activities on top of it will be closed and this Intent will be delivered to the (now on top) old activity as a new Intent.
-    	notification.flags |= Notification.FLAG_NO_CLEAR; // prevent clearing of the flag
+    	if (mayClear)
+    		notification.flags |= Notification.FLAG_NO_CLEAR; // prevent clearing of the flag
     	
     	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
     	// Pass the Notification to the NotificationManager:
     	notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-    	mNotificationManager.notify(NOTIFY_BACKGROUND_ID, notification);
+    	mNotificationManager.notify(id, notification);
     }
     
-    void cancelBackgroundNotification()
+    void cancelNotification(int id)
     {
     	// Clear the Elve is running in the background notification (if it is still there).
     	String ns = Context.NOTIFICATION_SERVICE;
     	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
-    	mNotificationManager.cancel(NOTIFY_BACKGROUND_ID);
+    	mNotificationManager.cancel(id);
     }
     
     
@@ -560,6 +565,30 @@ public class ElveTouchScreenActivity extends Activity
 						_interfaceTooLargeAlertIsShown = false;
 					}
 				});
+        	    alertDialog.setIcon(R.drawable.ic_dialog_logo);
+        	    alertDialog.show();
+			}
+		});
+    }
+    
+    void showAlert(final String title, final String message)
+    {
+    	if (_interfaceTooLargeAlertIsShown)
+    		return;
+    	
+    	_interfaceTooLargeAlertIsShown = true;
+    			
+    	runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+        		AlertDialog alertDialog = new AlertDialog.Builder(ElveTouchScreenActivity.this).create();  
+        	    alertDialog.setTitle(title);  
+        	    alertDialog.setMessage(message);  
+        	    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {  
+        	      public void onClick(DialogInterface dialog, int which) {  
+        	    	  // do nothing
+        	    } });
         	    alertDialog.setIcon(R.drawable.ic_dialog_logo);
         	    alertDialog.show();
 			}
@@ -702,7 +731,19 @@ public class ElveTouchScreenActivity extends Activity
 	    	}
 	    }
 
-
+	    @Subscribe
+	    public void handleRendererShowMessageEventArgs(RendererShowMessageEventArgs eventArgs)
+	    {
+	    	if (eventArgs.DisplayMode == ShowMessageDisplayMode.NonIntrusive)
+	    	{
+	    		showNotification(eventArgs.Message, eventArgs.Title, eventArgs.Message, NOTIFY_SHOWMESSAGE_ID, true);
+	    	}
+	    	else
+	    	{
+	    		showAlert(eventArgs.Title, eventArgs.Message);
+	    	}
+	    }
+	    
 	    @Subscribe
 	    public void DrawImageReceivedTooLargeErrorEventArgs(DrawImageReceivedTooLargeErrorEventArgs eventArgs)
 	    {

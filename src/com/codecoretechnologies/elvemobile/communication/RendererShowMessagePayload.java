@@ -7,36 +7,25 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 public class RendererShowMessagePayload implements IBinaryTcpPayload
 {
-    public byte DisplayMode;
-    public String Text;
+	public ShowMessageDisplayMode DisplayMode;
+    public String Title;
+    public String Message;
 
     public RendererShowMessagePayload(ChannelBuffer buffer) throws UnsupportedEncodingException
     {
-    	DisplayMode = buffer.readByte();
-        Text = ChannelBufferIO.readString(buffer);
+    	DisplayMode = ShowMessageDisplayMode.getFromValue(buffer.readByte());
+    	Message = ChannelBufferIO.readString(buffer);
+    	if (buffer.readableBytes() > 0) // title was added after Elve version 1.5
+    		Title = ChannelBufferIO.readString(buffer);
+    	else
+    		Title = "";
     }
-    
-//    public RendererShowMessagePayload(byte[] data) throws IOException
-//    {
-//    	BinaryStreamReader sr = null;
-//    	try
-//    	{
-//        	sr = new BinaryStreamReader(data);
-//        	
-//        	DisplayMode = sr.ReadByte();
-//            Text = sr.ReadString();
-//    	}
-//    	finally
-//    	{
-//    		if (sr != null)
-//    			sr.close();
-//    	}
-//    }
 
-    public RendererShowMessagePayload(byte displayMode, String text)
+    public RendererShowMessagePayload(ShowMessageDisplayMode displayMode, String title, String message)
     {
-        DisplayMode = displayMode;
-        Text = text;
+    	DisplayMode = displayMode;
+        Title = title;
+        Message = message;
     }
 
     public TouchServiceTcpCommunicationPayloadTypes PayloadType()
@@ -49,9 +38,10 @@ public class RendererShowMessagePayload implements IBinaryTcpPayload
 		BinaryStreamWriter sw = null;
         try
         {
-			sw = new BinaryStreamWriter();
-			sw.Write((byte)DisplayMode);
-            sw.Write(Text);
+        	sw = new BinaryStreamWriter();
+        	sw.Write(DisplayMode.getValue());
+            sw.Write(Message);
+        	sw.Write(Title);
 
             return sw.ToArray();
         }

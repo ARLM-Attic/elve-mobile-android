@@ -466,6 +466,11 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                     }
 
                     break;
+                case ShowMessage:
+                	RendererShowMessagePayload showMsg = new RendererShowMessagePayload(_incomingBuffer);
+                	
+                	_eventBus.post(new RendererShowMessageEventArgs(showMsg.DisplayMode, showMsg.Title, showMsg.Message));
+                	break;
                 
                 case ScreenChange:
 

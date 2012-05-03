@@ -17,7 +17,7 @@ public class HelloPayload implements IBinaryTcpPayload
     public int PixelDepthByteCount; // usually 24 or 32.
     public boolean SupportsAlphaChannel;
     public String UniqueClientID; // The unique identifier of the device.  iphone should use UIDevice.UniqueIdentifier. This is used to help limit the # of touch screens.
-    public byte ImageFormat; // 0=png, 1=jpeg
+    public TouchTcpImageFormat ImageFormat; // 0=png, 1=jpeg
     public byte JpegImageQuality; // 0 to 100 for jpeg only
 
     public HelloPayload(ChannelBuffer buffer) throws UnsupportedEncodingException
@@ -33,6 +33,21 @@ public class HelloPayload implements IBinaryTcpPayload
             UniqueClientID = ChannelBufferIO.readString(buffer);
         else
             UniqueClientID = "";
+        
+        if (buffer.readableBytes() > 0)
+        {
+            byte format = buffer.readByte();
+            if (format == 0)
+                ImageFormat = TouchTcpImageFormat.Png;
+            else
+                ImageFormat = TouchTcpImageFormat.Jpeg;
+            JpegImageQuality = buffer.readByte(); // 0 to 100 for jpeg only.
+        }
+        else
+        {
+            ImageFormat = TouchTcpImageFormat.Png;
+            JpegImageQuality = 70;
+        }
     }
     
 //	public HelloPayload(byte[] data) throws IOException
@@ -61,7 +76,7 @@ public class HelloPayload implements IBinaryTcpPayload
 //    	}
 //    }
 
-    public HelloPayload(byte protocolVersion, byte applicationID, RenderingMode renderingMode, Point screenSize, int pixelDepthByteCount, boolean supportsAlphaChannel, String uniqueClientID, byte imageFormat, byte jpegImageQuality)
+    public HelloPayload(byte protocolVersion, byte applicationID, RenderingMode renderingMode, Point screenSize, int pixelDepthByteCount, boolean supportsAlphaChannel, String uniqueClientID, TouchTcpImageFormat imageFormat, byte jpegImageQuality)
     {
         ProtocolVersion = protocolVersion;
         ApplicationID = applicationID;
@@ -92,7 +107,7 @@ public class HelloPayload implements IBinaryTcpPayload
             sw.Write((byte)PixelDepthByteCount);
             sw.Write(SupportsAlphaChannel);
             sw.Write(UniqueClientID);
-            sw.Write(ImageFormat);
+            sw.Write(ImageFormat.getValue());
             sw.Write(JpegImageQuality);
 
             return sw.ToArray();

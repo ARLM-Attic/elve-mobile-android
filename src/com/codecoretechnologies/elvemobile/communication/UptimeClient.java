@@ -42,7 +42,7 @@ public class UptimeClient implements Closeable
     private EventBus _eventBus;
     private String _username;
     private String _password;
-    private byte _imageFormat;
+    private TouchTcpImageFormat _imageFormat;
     private byte _jpegImageQuality;
     private byte[] _sessionID;
     private Point _screenSize;
@@ -53,7 +53,7 @@ public class UptimeClient implements Closeable
     private Timer _idleTimer;
     private UptimeClientHandler _uptimeHandler;
 
-    public UptimeClient(String host, int port, String username, String password, byte imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
+    public UptimeClient(String host, int port, String username, String password, TouchTcpImageFormat imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._host = host;
         this._port = port;
         this._username = username;

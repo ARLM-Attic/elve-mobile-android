@@ -1,5 +1,7 @@
 package com.codecoretechnologies.elvemobile;
 
+import com.codecoretechnologies.elvemobile.communication.TouchTcpImageFormat;
+
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -168,13 +170,13 @@ public class PrefsActivity extends PreferenceActivity
         return prefs.getBoolean("pref_keepScreenOn", true);
     }
     
-    static public byte getImageFormat(Context context) {
+    static public TouchTcpImageFormat getImageFormat(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String s = prefs.getString("pref_imageQuality", "PNG");
         if (s.equals("PNG"))
-        	return 0; // 0=png
+        	return TouchTcpImageFormat.Png;
         else
-        	return 1; // 1=jpeg
+        	return TouchTcpImageFormat.Jpeg;
     }
     
     static public byte getJpegImageQuality(Context context) {

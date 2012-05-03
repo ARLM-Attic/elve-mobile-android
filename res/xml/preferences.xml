@@ -64,11 +64,12 @@
     
       <ListPreference
           android:title="Image Quality"
-          android:summary="Higher quality reduces speed and increases memory use."
+          android:summary="Higher quality reduces speed and increases memory use. (Reserved for future version)"
           android:key="pref_imageQuality"
           android:defaultValue="PNG"
           android:entries="@array/imageQualityTexts"
-          android:entryValues="@array/imageQualityValues" />
+          android:entryValues="@array/imageQualityValues"
+          android:enabled="false" />
     
   </PreferenceCategory>
   

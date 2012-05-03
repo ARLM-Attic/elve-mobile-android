@@ -48,7 +48,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     private long _startTime = -1;
     private final String _username;
     private final String _password;
-    private byte _imageFormat;
+    private TouchTcpImageFormat _imageFormat;
     private byte _jpegImageQuality;
     private byte[] _sessionID;
     private final Point _screenSize;
@@ -68,7 +68,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
     // Sleep 5 seconds before a reconnection attempt.
     static final int RECONNECT_DELAY = 5;
 
-    public UptimeClientHandler(ClientBootstrap bootstrap, String username, String password, byte imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
+    public UptimeClientHandler(ClientBootstrap bootstrap, String username, String password, TouchTcpImageFormat imageFormat, byte jpegImageQuality, byte[] sessionID, String deviceID, Point screenSize, EventBus eventBus) {
         this._bootstrap = bootstrap;
         this._username = username;
         this._password = password;

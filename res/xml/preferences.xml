@@ -11,7 +11,7 @@
   <PreferenceCategory
      android:title="Beta">
        <Preference
-    android:title="This is a Beta Version (17)"
+    android:title="This is a Beta Version (18)"
     android:summary="This app is intented for testing purposes and may not be fully operational."
     android:icon="@drawable/ic_launcher_logo"
     android:selectable="false" />
@@ -64,7 +64,7 @@
     
       <ListPreference
           android:title="Image Quality"
-          android:summary="Higher quality reduces speed and increases memory use. (Requires Elve 2.0+)"
+          android:summary="Reduce image quality to improve performance and reduce memory use. (Requires Elve 2.0+)"
           android:key="pref_imageQuality"
           android:defaultValue="PNG"
           android:entries="@array/imageQualityTexts"

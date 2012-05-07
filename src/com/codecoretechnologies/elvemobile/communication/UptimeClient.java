@@ -35,8 +35,8 @@ public class UptimeClient implements Closeable
 {
     // Reconnect when the server sends nothing for 60 seconds.
     private static final int READ_TIMEOUT = 30; // the server will send us a ping every 30 seconds of inactivity
-    private static final int WRITE_TIMEOUT = 14;
-    
+    private static final int WRITE_TIMEOUT = 60;
+
     private final String _host;
     private final int _port;
     private EventBus _eventBus;

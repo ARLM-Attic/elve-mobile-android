@@ -178,6 +178,10 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
         	_startTime = -1;
         	println("Failed to connect: " + cause.getMessage());
         }
+        else if (cause instanceof OutOfMemoryError)
+        {
+        	_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs());
+        }
         else
         {
         	Log.e("COMM EXCEPTION", "An unknown exception occurred in the communication class.", cause);
@@ -469,7 +473,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 case ShowMessage:
                 	RendererShowMessagePayload showMsg = new RendererShowMessagePayload(_incomingBuffer);
                 	
-                	_eventBus.post(new RendererShowMessageEventArgs(showMsg.DisplayMode, showMsg.Title, showMsg.Message));
+                	_eventBus.post(new RendererShowMessageEventArgs(showMsg.DisplayMode, showMsg.Importance, showMsg.Title, showMsg.Message));
                 	break;
                 
                 case ScreenChange:

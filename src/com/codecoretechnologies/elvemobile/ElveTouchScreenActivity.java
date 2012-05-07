@@ -6,6 +6,7 @@ import com.codecoretechnologies.elvemobile.communication.ContinueSessionResults;
 import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedEventArgs;
 import com.codecoretechnologies.elvemobile.communication.RendererShowMessageEventArgs;
 import com.codecoretechnologies.elvemobile.communication.ShowMessageDisplayMode;
+import com.codecoretechnologies.elvemobile.communication.ShowMessageImportance;
 import com.codecoretechnologies.elvemobile.communication.TouchEventType;
 import com.codecoretechnologies.elvemobile.communication.TouchServiceTcpCommunicationAuthenticationResults;
 import com.codecoretechnologies.elvemobile.communication.TouchTcpAuthenticationResultReceivedEventArgs;
@@ -301,7 +302,7 @@ public class ElveTouchScreenActivity extends Activity
 	    	if (PrefsActivity.getRunInBackground(this) == false)
 	    		finish();
 	    	else
-	    		showNotification("Elve Mobile is running in the background.", "Elve Mobile", "Elve Mobile is running in the background.", NOTIFY_BACKGROUND_ID, false);
+	    		showNotification("Elve Mobile is running in the background.", "Elve Mobile", "Elve Mobile is running in the background.", NOTIFY_BACKGROUND_ID, false, false);
     	}
 
     	super.onPause();
@@ -428,7 +429,7 @@ public class ElveTouchScreenActivity extends Activity
     
 
     
-    void showNotification(CharSequence tickerText, CharSequence title, CharSequence message, int id, boolean mayClear)
+    void showNotification(CharSequence tickerText, CharSequence title, CharSequence message, int id, boolean mayClear, boolean isImportant)
     {
     	//http://developer.android.com/guide/topics/ui/notifiers/notifications.html
     	
@@ -438,7 +439,11 @@ public class ElveTouchScreenActivity extends Activity
     	NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
     	
     	// Instantiate the Notification:
-    	int icon = R.drawable.ic_dialog_logo;
+    	int icon;
+    	if (isImportant)
+    		icon = R.drawable.ic_dialog_logo_warning;
+    	else
+    		icon = R.drawable.ic_dialog_logo;
     	long when = System.currentTimeMillis();
 
     	Notification notification = new Notification(icon, tickerText, when);
@@ -664,9 +669,13 @@ public class ElveTouchScreenActivity extends Activity
 	        switch (eventArgs.State)
 	        {
 	            case AttemptingToConnect:
+	            	_hasReceivedFirstImage = false; // clear _hasReceivedFirstImage so that the ImageView will get the new bitmap assigned to it.
+	            	_isImageViewBitmapSet = false;
 	                text = "Connecting...";
 	                break;
 	            case AttemptingToReconnect:
+	            	_hasReceivedFirstImage = false; // clear _hasReceivedFirstImage so that the ImageView will get the new bitmap assigned to it.
+	            	_isImageViewBitmapSet = false;
 	                text = "Reconnecting...";
 	                break;
 	            case Authenticating:
@@ -731,8 +740,8 @@ public class ElveTouchScreenActivity extends Activity
 	    public void handleRendererShowMessageEventArgs(RendererShowMessageEventArgs eventArgs)
 	    {
 	    	if (eventArgs.DisplayMode == ShowMessageDisplayMode.NonIntrusive)
-	    	{
-	    		showNotification(eventArgs.Message, eventArgs.Title, eventArgs.Message, _currentShowMessageID, true);
+	    	{//showNotification(tickerText, title, message, id, mayClear, isImportant)
+	    		showNotification(eventArgs.Message, eventArgs.Title, eventArgs.Message, _currentShowMessageID, true, eventArgs.Importance == ShowMessageImportance.Important);
 	    		_currentShowMessageID++; // increment the id so that we get a new notification each time.
 	    	}
 	    	else

@@ -180,7 +180,8 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
         }
         else if (cause instanceof OutOfMemoryError)
         {
-        	_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs());
+        	_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs(false));
+        	return; // Reconnecting does not seem to work after an out of memory error, so return.
         }
         else
         {
@@ -520,7 +521,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 		//Console.WriteLine(DateTime.Now.ToString() + "  **** TouchClient processing DrawImage payload for bounds: X=" + drawImagePayload.Bounds.X + ", Y=" + drawImagePayload.Bounds.Y + ", Width=" + drawImagePayload.Bounds.Width + ", Height=" + drawImagePayload.Bounds.Height);
 
                 		if (drawImagePayload.Image == null) // Image will be null if it could not be processed (for example due to memory limitations).
-                			_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs());
+                			_eventBus.post(new DrawImageReceivedTooLargeErrorEventArgs(true));
                 		else
                 			_eventBus.post(new DrawImageReceivedEventArgs(drawImagePayload.Bounds, drawImagePayload.Opacity, drawImagePayload.SizeMode, drawImagePayload.Image));
                 	}

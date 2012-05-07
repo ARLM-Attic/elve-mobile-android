@@ -45,6 +45,7 @@ import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.widget.ImageView;
@@ -534,7 +535,7 @@ public class ElveTouchScreenActivity extends Activity
 		});
     }
     
-    void showInterfaceTooLargeAlert()
+    void showInterfaceTooLargeAlert(final boolean showOKButton)
     {
     	if (_interfaceTooLargeAlertIsShown)
     		return;
@@ -547,11 +548,14 @@ public class ElveTouchScreenActivity extends Activity
 			{
         		AlertDialog alertDialog = new AlertDialog.Builder(ElveTouchScreenActivity.this).create();  
         	    alertDialog.setTitle("Elve Mobile");  
-        	    alertDialog.setMessage("There is not enough memory available for Elve Mobile to accurately handle the received interface. It is recommended that a smaller Elve touch screen interface be used for this android device.");  
-        	    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {  
-        	      public void onClick(DialogInterface dialog, int which) {  
-        	    	  _interfaceTooLargeAlertIsShown = false;
-        	    } });
+        	    alertDialog.setMessage("There is not enough memory available for Elve Mobile to accurately handle the received interface. It is recommended that a smaller Elve touch screen interface be used for this android device.");
+        	    if (showOKButton)
+        	    {
+	        	    alertDialog.setButton("OK", new DialogInterface.OnClickListener() {  
+	        	      public void onClick(DialogInterface dialog, int which) {  
+	        	    	  _interfaceTooLargeAlertIsShown = false;
+	        	    } });
+        	    }
         	    alertDialog.setButton2("Settings", new DialogInterface.OnClickListener() {  
           	      public void onClick(DialogInterface dialog, int which) {  
           	    	  showPrefsActivity();
@@ -753,7 +757,7 @@ public class ElveTouchScreenActivity extends Activity
 	    @Subscribe
 	    public void DrawImageReceivedTooLargeErrorEventArgs(DrawImageReceivedTooLargeErrorEventArgs eventArgs)
 	    {
-	    	showInterfaceTooLargeAlert();
+	    	showInterfaceTooLargeAlert(eventArgs.CausedByBitmap);
 	    }
 	
 	    @Subscribe
@@ -822,31 +826,38 @@ public class ElveTouchScreenActivity extends Activity
 			    	        	int bmWidth = bm.getWidth();
 			    	        	int bmHeight = bm.getHeight();
 			    	        	
-			    		        // Get the imageview's activity.
-			    				//Activity activity = (Activity)(ElveTouchScreenActivity.badStaticImageViewForTesting.getContext());
-			    				// Get screen size.
-			    		        WindowManager wm = (WindowManager) ElveTouchScreenActivity.this.getSystemService(Context.WINDOW_SERVICE);
-			    		        Display display = wm.getDefaultDisplay();
-			    		        Point screenSize = new Point(display.getWidth(), display.getHeight()); // Gets the size of the display, in pixels.
-			    		
+//			    		        // Get the imageview's activity.
+//			    				//Activity activity = (Activity)(ElveTouchScreenActivity.badStaticImageViewForTesting.getContext());
+//			    				// Get screen size.
+//			    		        WindowManager wm = (WindowManager) ElveTouchScreenActivity.this.getSystemService(Context.WINDOW_SERVICE);
+//			    		        Display display = wm.getDefaultDisplay();
+//			    		        int dispWidth = display.getWidth(); // in pixels
+//			    		        int dispHeight = display.getWidth(); // in pixels
+//			    		
+//			    		        View contentView = getWindow().findViewById(Window.ID_ANDROID_CONTENT); // without notification bar
+//			    		        int contWidth = contentView.getWidth();
+//			    		        int contHeight = contentView.getWidth();
 			    		        
-			    				// If the touch screen size is the same size as the screen then do not use a ScrollViewWithTouch since it uses a touch delay that is annoying.
-			    				if (bmWidth == screenSize.x && bmHeight == screenSize.y)
-			    				{
-			    					// The touch screen is the same size as the portrait screen.
-			    					// TODO: turn OFF rotate and zoom support.
-			    					ElveTouchScreenActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // this is likely uneeded but lets be explicit.
-			    				}
-			    				else if (bmWidth == screenSize.x && bmHeight == screenSize.y) 
-			    				{
-			    					// The touch screen is the same size as the lanscape screen.
-			    					// TODO: turn OFF rotate and zoom support.
-			    					// Show the view in landscape mode.
-			    					ElveTouchScreenActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			    				}
-			    				else
-			    				{
-			    					// TODO: turn ON rotate and zoom support.
+			    		        
+//			    				// If the touch screen size is the same size as the screen then do not use a ScrollViewWithTouch since it uses a touch delay that is annoying.
+//			    				if (bmWidth == dispWidth && bmHeight == dispHeight
+//			    						|| bmWidth == contWidth && bmHeight == contHeight)
+//			    				{
+//			    					// The touch screen is the same size as the portrait screen.
+//			    					// TODO: turn OFF pan and zoom support.
+//			    					ElveTouchScreenActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // this is likely uneeded but lets be explicit.
+//			    				}
+//			    				else if (bmWidth == dispHeight && bmHeight == dispWidth
+//			    						|| bmWidth == contHeight && bmHeight == contWidth) 
+//			    				{
+//			    					// The touch screen is the same size as the landscape screen.
+//			    					// TODO: turn OFF pan and zoom support.
+//			    					// Show the view in landscape mode.
+//			    					ElveTouchScreenActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+//			    				}
+//			    				else
+//			    				{
+			    					// TODO: turn ON pan and zoom support.
 			    					if (bmWidth > bmHeight)
 			    					{
 			    						// Show the view in landscape mode.
@@ -857,7 +868,7 @@ public class ElveTouchScreenActivity extends Activity
 			    						// Show the view in portrait mode.
 			    						ElveTouchScreenActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // this is likely uneeded but lets be explicit.
 			    					}
-			    				}
+//			    				}
 			    	        }
 		    			}
 		    		});

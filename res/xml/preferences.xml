@@ -11,7 +11,7 @@
   <PreferenceCategory
      android:title="Beta">
        <Preference
-    android:title="This is a Beta Version (15)"
+    android:title="This is a Beta Version (17)"
     android:summary="This app is intented for testing purposes and may not be fully operational."
     android:icon="@drawable/ic_launcher_logo"
     android:selectable="false" />

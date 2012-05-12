@@ -6,16 +6,7 @@
     android:title="Welcome to Elve Mobile"
     android:summary="Ensure the Elve Touch Service is installed on a computer to establish a connection."
     android:selectable="false" />
-    
-      
-  <PreferenceCategory
-     android:title="Beta">
-       <Preference
-    android:title="This is a Beta Version (18)"
-    android:summary="This app is intented for testing purposes and may not be fully operational."
-    android:icon="@drawable/ic_launcher_logo"
-    android:selectable="false" />
-  </PreferenceCategory>
+
         
   <PreferenceCategory
      android:title="Elve Touch Server">

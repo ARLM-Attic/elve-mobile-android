@@ -476,6 +476,14 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                 	
                 	_eventBus.post(new RendererShowMessageEventArgs(showMsg.DisplayMode, showMsg.Importance, showMsg.Title, showMsg.Message));
                 	break;
+                	
+                case StartApplication:
+
+                    StartApplicationPayload startApp = new StartApplicationPayload(_incomingBuffer);
+
+                    _eventBus.post(new StartApplicationReceivedEventArgs(startApp.ApplicationType, startApp.CommandLine));
+
+                    break;
                 
                 case ScreenChange:
 

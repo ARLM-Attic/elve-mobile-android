@@ -51,8 +51,10 @@ public enum TouchServiceTcpCommunicationPayloadTypes
 
     // Session support was added in Elve 2.0
     ContinueSession (29),              // Client->Server: Requests the continuing a previously disconnected session. The session may have already expired.
-    ContinueSessionResult (30);        // Server->Client: indicates if the session could be continued.
+    ContinueSessionResult (30),        // Server->Client: indicates if the session could be continued.
 
+    StartApplication(31);              // Server->Client: start an application
+    
     // TODO: need throttling commands and maybe a message command    
     
     private final static ConcurrentMap<Byte, TouchServiceTcpCommunicationPayloadTypes> values = Maps.newConcurrentMap();

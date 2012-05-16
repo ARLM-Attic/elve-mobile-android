@@ -7,6 +7,8 @@ import com.codecoretechnologies.elvemobile.communication.DrawImageReceivedEventA
 import com.codecoretechnologies.elvemobile.communication.RendererShowMessageEventArgs;
 import com.codecoretechnologies.elvemobile.communication.ShowMessageDisplayMode;
 import com.codecoretechnologies.elvemobile.communication.ShowMessageImportance;
+import com.codecoretechnologies.elvemobile.communication.StartApplicationReceivedEventArgs;
+import com.codecoretechnologies.elvemobile.communication.StartApplicationType;
 import com.codecoretechnologies.elvemobile.communication.TouchEventType;
 import com.codecoretechnologies.elvemobile.communication.TouchServiceTcpCommunicationAuthenticationResults;
 import com.codecoretechnologies.elvemobile.communication.TouchTcpAuthenticationResultReceivedEventArgs;
@@ -38,6 +40,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings.Secure;
 import android.util.Log;
@@ -752,6 +755,32 @@ public class ElveTouchScreenActivity extends Activity
 	    	{
 	    		showAlert(eventArgs.Title, eventArgs.Message);
 	    	}
+	    }
+	    
+	    @Subscribe
+	    public void handleStartApplicationReceivedEventArgs(StartApplicationReceivedEventArgs eventArgs)
+	    {
+	    	try
+            {
+                if (eventArgs.ApplicationType == StartApplicationType.DefaultWebBrowser &&
+                    (eventArgs.CommandLine.toLowerCase().startsWith("http://")
+                    || eventArgs.CommandLine.toLowerCase().startsWith("https://")
+                    || eventArgs.CommandLine.toLowerCase().startsWith("mail:")
+                    ))
+                {
+                	// Show the browser app.
+                	startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(eventArgs.CommandLine)));
+                	
+                	// Show browser in this app.
+                	//WebView webview = new WebView(this);
+                	//setContentView(webview);
+                	//webview.loadUrl(eventArgs.CommandLine);
+                }
+            }
+            catch (Exception ex)
+            {
+            	ex.printStackTrace();
+            }
 	    }
 	    
 	    @Subscribe

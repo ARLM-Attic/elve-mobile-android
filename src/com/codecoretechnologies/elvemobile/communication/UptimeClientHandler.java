@@ -30,6 +30,7 @@ import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.Log;
@@ -411,11 +412,11 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                     {
                     	_eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.Authenticated));
 
-                    	_eventBus.post(new ContinueSessionResultReceivedEventArgs(contSessResult.Result, contSessResult.TouchScreenSize));
+                    	_eventBus.post(new ContinueSessionResultReceivedEventArgs(contSessResult.Result, contSessResult.TouchScreenSize, contSessResult.BackgroundColor));
                     }
                     else
                     {
-                    	_eventBus.post(new ContinueSessionResultReceivedEventArgs(contSessResult.Result, contSessResult.TouchScreenSize));
+                    	_eventBus.post(new ContinueSessionResultReceivedEventArgs(contSessResult.Result, contSessResult.TouchScreenSize, contSessResult.BackgroundColor));
 
                         // Clear the session id since it wasn't valid.
                         _sessionID = null;
@@ -459,7 +460,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
 
                         _eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.Authenticated));
 
-                        _eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, authResult.TouchScreenSize, authResult.SessionID));
+                        _eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, authResult.TouchScreenSize, authResult.BackgroundColor, authResult.SessionID));
                     }
                     else
                     {
@@ -467,7 +468,7 @@ public class UptimeClientHandler extends SimpleChannelUpstreamHandler implements
                     	
                     	_eventBus.post(new TouchTcpClientStateChangedEventArgs(TouchTcpClientState.FailedAuthentication));
 
-                    	_eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, null, null));
+                    	_eventBus.post(new TouchTcpAuthenticationResultReceivedEventArgs(authResult.AuthenticationResult, null, Color.BLACK, null));
                     }
                     break;
                     

@@ -32,6 +32,7 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
@@ -67,6 +68,7 @@ public class ElveTouchScreenActivity extends Activity
 	private EventBus _eventbus = null;
 	private CommEventHandlers _eventHandler = null;
 	private Bitmap _bitmap = null;
+	private int _backgroundColor = Color.BLACK;
 	private boolean _isImageViewBitmapSet = false;
 	private boolean _destroyed = false;
 	private boolean _interfaceTooLargeAlertIsShown = false;
@@ -261,7 +263,7 @@ public class ElveTouchScreenActivity extends Activity
     	
     	super.onStart();
     }
-    
+
     @Override
     protected void onResume()
     {
@@ -270,11 +272,13 @@ public class ElveTouchScreenActivity extends Activity
         // Get 1st image
         if (_bitmap != null)
         	updateImageView();
-        
-        
+
+        _iv.setBackgroundColor(_backgroundColor);
+
+
     	// Clear the Elve is running in the background notification (if it is still there).
         cancelNotification(NOTIFY_BACKGROUND_ID);  
-        
+
     	super.onResume();
     }
 
@@ -709,6 +713,9 @@ public class ElveTouchScreenActivity extends Activity
 	    	{
 	    		// Create a graphics canvas of the specified size.
 	    		_bitmap = Bitmap.createBitmap(eventArgs.TouchScreenSize.x, eventArgs.TouchScreenSize.y, Bitmap.Config.ARGB_8888);
+	    		
+	    		// Remember the background color for when the first image is received.
+	    		_backgroundColor = eventArgs.BackgroundColor;
 	    	}
 	    }
 
@@ -739,6 +746,9 @@ public class ElveTouchScreenActivity extends Activity
 
 	    		// Create a graphics canvas of the specified size.
 	    		_bitmap = Bitmap.createBitmap(eventArgs.TouchScreenSize.x, eventArgs.TouchScreenSize.y, Bitmap.Config.ARGB_8888);
+
+	    		// Remember the background color for when the first image is received.
+	    		_backgroundColor = eventArgs.BackgroundColor;
 	    	}
 	    }
 
@@ -844,7 +854,9 @@ public class ElveTouchScreenActivity extends Activity
 		    				// Change the imageview's scale to fill the screen proportionally and center.
 			    			_iv.setImageDrawable(null); // Clear the image view so that we don't see the current image resize in the next line.
 		    				_iv.setScaleType(ScaleType.FIT_CENTER); // Fill the screen proportionally when the 1st image is downloaded.
-		    				
+
+		    				// Set the background color of the imageview. This will be show at the edges if any letterboxing is done. 
+		    				_iv.setBackgroundColor(_backgroundColor);
 			    			
 			    			
 			    			
